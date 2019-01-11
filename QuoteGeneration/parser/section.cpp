@@ -29,21 +29,41 @@
  *
  */
 
-enclave{
-    include "pce_cert.h"
-    include "sgx_report.h"
-    trusted {
-        public uint32_t get_pc_info([in]const sgx_report_t *report,
-                                    [in, size=key_size]const uint8_t *public_key, uint32_t key_size,
-                                    uint8_t crypto_suite,
-                                    [out, size=encrypted_ppid_buf_size]uint8_t *encrypted_ppid, uint32_t encrypted_ppid_buf_size,
-                                    [out]uint32_t *encrypted_ppid_out_size,
-                                    [out]pce_info_t *pce_info,
-                                    [out] uint8_t *signature_scheme);
 
-        public uint32_t certify_enclave([in]const psvn_t *cert_psvn,
-                                        [in]const sgx_report_t *report, 
-                                        [out, size=signature_buf_size]uint8_t *signature, uint32_t signature_buf_size,
-                                        [out]uint32_t *signature_out_size);
-    };
-};
+
+#include "section.h"
+
+Section::Section(const uint8_t* start_addr, uint64_t size, uint64_t virt_size,
+                 uint64_t rva, si_flags_t sf)
+    :m_start_addr(start_addr), m_raw_data_size(size), m_rva(rva),
+     m_virtual_size(virt_size), m_si_flag(sf)
+{}
+
+Section::~Section()
+{
+}
+
+const uint8_t* Section::raw_data(void) const
+{
+    return m_start_addr;
+}
+
+uint64_t Section::raw_data_size(void) const
+{
+    return m_raw_data_size;
+}
+
+uint64_t Section::get_rva(void) const
+{
+    return m_rva;
+}
+
+uint64_t Section::virtual_size(void) const
+{
+    return m_virtual_size;
+}
+
+si_flags_t Section::get_si_flags(void) const
+{
+    return m_si_flag;
+}
