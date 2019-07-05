@@ -13,13 +13,15 @@ function checkNodeJs() {
 }
 
 checkNodeJs
+
+cd `dirname $0`
 npm install
 
 if which pm2 > /dev/null 
 then 
     echo "pm2 is installed, continue ..."
 else
-    sudo npm install -g pm2
+    npm install -g pm2
 fi
 
 #Ask for administrator password
@@ -30,7 +32,7 @@ while [ "$pass_set" == false ]
 do
     while test "$admintoken1" == ""
     do
-        read -s -p "Set PCS server administrator password:" admintoken1
+        read -s -p "Set PCCS server administrator password:" admintoken1
         printf "\n"
     done
 
@@ -53,7 +55,7 @@ do
 done
 
 pm2 update
-pm2 start pcs_server.js
+pm2 start pccs_server.js
 
 pm2cfg=`pm2 startup systemd | grep 'sudo'` 
 eval $pm2cfg

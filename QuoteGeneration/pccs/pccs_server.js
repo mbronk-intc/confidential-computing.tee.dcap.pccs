@@ -47,7 +47,7 @@ var certificate = fs.readFileSync('./file.crt', 'utf8');
 }
 var credentials = {key: privateKey, cert: certificate};
 var httpsServer = https.createServer(credentials, app);
-httpsServer.listen(config.HTTPS_PORT, function() {
+httpsServer.listen(config.HTTPS_PORT, config.hosts, function() {
     console.log('HTTPS Server is running on: https://localhost:%s', config.HTTPS_PORT);
 });
 
@@ -93,6 +93,13 @@ app.get('/sgx/certification/v1/pckcert', parseUrlParams, function(req, res) {
                     res.send("Invalid parameters");
                     return;
                 }
+                // if enc_ppid is all zero, return NOT_FOUND
+                if (enc_ppid.match(/^0+$/)) {
+                    res.status(STATUS_NOT_FOUND);
+                    res.send("The PCK certificate for the platform was not found.");
+                    return;
+                }
+                // contact Intel PCCS server
                 pckclient.getCert(enc_ppid, cpusvn, pcesvn, pceid).then(
                     pck_server_res=>{
                         // Send response to client first

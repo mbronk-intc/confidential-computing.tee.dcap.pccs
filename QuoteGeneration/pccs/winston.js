@@ -3,7 +3,7 @@ var winston = require('winston');
 var options = {
   file: {
     level: 'error',
-    filename: __dirname + `/logs/pcs_server.log`,
+    filename: __dirname + `/logs/pccs_server.log`,
     handleExceptions: true,
     json: false,
     colorize: true,
