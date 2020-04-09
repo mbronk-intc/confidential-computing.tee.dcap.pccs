@@ -8,6 +8,7 @@
     "UserToken" : "",
     "AdminToken" : "",
     "CachingFillMode" : "LAZY",
+    "LogLevel" : "info",
     "DB_CONFIG" : "sqlite",
     "sqlite" : {
         "database" : "database",
