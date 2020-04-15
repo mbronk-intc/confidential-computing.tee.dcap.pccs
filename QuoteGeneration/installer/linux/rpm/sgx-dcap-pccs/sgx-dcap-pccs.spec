@@ -29,15 +29,56 @@
 #
 #
 
-include installConfig
+%define _install_path @install_path@
 
-PACKAGE_ROOT_FOLDER=pkgroot
-PACKAGES=$(notdir $(wildcard $(PACKAGE_ROOT_FOLDER)/*))
+Name:           sgx-dcap-pccs
+Version:        @version@
+Release:        1%{?dist}
+Summary:        Intel(R) Software Guard Extensions PCK Caching Service
+Group:          Applications/Internet
 
-default:
+License:        BSD License
+URL:            https://github.com/intel/SGXDataCenterAttestationPrimitives
+Source0:        %{name}-%{version}.tar.gz
 
-install: $(PACKAGES)
+%description
+Intel(R) Software Guard Extensions PCK Caching Service
 
-$(PACKAGES):
-	install -d $(shell readlink -m $(DESTDIR)/$(DCAP_PCCS_PACKAGE_PATH)/$(DCAP_PCCS_PACKAGE_NAME))
-	cp -r $(PACKAGE_ROOT_FOLDER)/$@/* $(DESTDIR)/$(DCAP_PCCS_PACKAGE_PATH)/$(DCAP_PCCS_PACKAGE_NAME)
+%prep
+%setup -qc
+
+%install
+make DESTDIR=%{?buildroot} install
+echo "%{_install_path}" > %{_specdir}/listfiles
+echo "%config %{_install_path}/config/production-0.json" >> %{_specdir}/listfiles
+
+%files -f %{_specdir}/listfiles
+
+%post
+chown -R $(logname):$(logname) %{_install_path}
+if which pm2 > /dev/null; then
+    echo "pm2 is installed, continue ..."
+else
+    npm install -g pm2
+fi
+/bin/su -c "%{_install_path}/install.sh postinst" $(logname)
+pm2cfg=`/bin/su -c "pm2 startup systemd | grep 'sudo'" $(logname)` || true
+eval $pm2cfg 
+
+%postun
+if which pm2 > /dev/null; then
+    pm2 stop pccs || true
+    pm2 delete pccs || true
+    pm2cfg=`/bin/su -c "pm2 unstartup | grep 'sudo'" - $(logname)` || true
+    eval $pm2cfg || true
+fi
+
+if [ -d %{_install_path} ]; then
+    pushd %{_install_path} &> /dev/null
+    rm -rf node_modules || true
+    popd &> /dev/null
+fi
+
+%changelog
+* Mon Mar 10 2020 SGX Team
+- Initial Release

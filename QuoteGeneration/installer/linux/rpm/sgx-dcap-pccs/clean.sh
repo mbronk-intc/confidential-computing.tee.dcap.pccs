@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
@@ -29,15 +30,12 @@
 #
 #
 
-include installConfig
 
-PACKAGE_ROOT_FOLDER=pkgroot
-PACKAGES=$(notdir $(wildcard $(PACKAGE_ROOT_FOLDER)/*))
+set -e
 
-default:
+SCRIPT_DIR=$(dirname "$0")
+COMMON_DIR="${SCRIPT_DIR}/../../common/sgx-dcap-pccs"
 
-install: $(PACKAGES)
-
-$(PACKAGES):
-	install -d $(shell readlink -m $(DESTDIR)/$(DCAP_PCCS_PACKAGE_PATH)/$(DCAP_PCCS_PACKAGE_NAME))
-	cp -r $(PACKAGE_ROOT_FOLDER)/$@/* $(DESTDIR)/$(DCAP_PCCS_PACKAGE_PATH)/$(DCAP_PCCS_PACKAGE_NAME)
+rm -f ${SCRIPT_DIR}/sgx-dcap-pccs*.rpm
+rm -f ${COMMON_DIR}/gen_source.py
+rm -rf ${COMMON_DIR}/output

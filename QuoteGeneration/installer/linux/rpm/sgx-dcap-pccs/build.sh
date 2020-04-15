@@ -30,32 +30,59 @@
 #
 #
 
-
 set -e
 
 SCRIPT_DIR=$(dirname "$0")
 ROOT_DIR="${SCRIPT_DIR}/../../../../"
 LINUX_INSTALLER_DIR="${ROOT_DIR}/installer/linux"
 LINUX_INSTALLER_COMMON_DIR="${LINUX_INSTALLER_DIR}/common"
+LINUX_INSTALLER_COMMON_DCAP_PCCS_DIR="${LINUX_INSTALLER_COMMON_DIR}/sgx-dcap-pccs"
 
-INSTALL_PATH=${SCRIPT_DIR}/output
+source ${LINUX_INSTALLER_COMMON_DCAP_PCCS_DIR}/installConfig
 
-# Cleanup
-rm -fr ${INSTALL_PATH}
+SGX_VERSION=$(awk '/STRFILEVER/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
+RPM_BUILD_FOLDER=${DCAP_PCCS_PACKAGE_NAME}-${SGX_VERSION}
 
-# Get the configuration for this package
-source ${SCRIPT_DIR}/installConfig
+main() {
+    pre_build
+    update_spec
+    create_upstream_tarball
+    build_rpm_package
+    post_build
+}
 
-# Fetch the gen_source script
-cp ${LINUX_INSTALLER_COMMON_DIR}/gen_source/gen_source.py ${SCRIPT_DIR}
+pre_build() {
+    rm -fR ${SCRIPT_DIR}/${RPM_BUILD_FOLDER}
+    mkdir -p ${SCRIPT_DIR}/${RPM_BUILD_FOLDER}/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+    cp -f ${SCRIPT_DIR}/${DCAP_PCCS_PACKAGE_NAME}.spec ${SCRIPT_DIR}/${RPM_BUILD_FOLDER}/SPECS
+}
 
-# Copy the files according to the BOM
-python ${SCRIPT_DIR}/gen_source.py --bom=BOMs/sgx-dcap-pccs.txt --installdir=pkgroot/sgx-dcap-pccs
-python ${SCRIPT_DIR}/gen_source.py --bom=BOMs/sgx-dcap-pccs-package.txt --cleanup=false
-python ${SCRIPT_DIR}/gen_source.py --bom=../licenses/BOM_license.txt --cleanup=false
+post_build() {
+    for FILE in $(find ${SCRIPT_DIR}/${RPM_BUILD_FOLDER} -name "*.rpm" 2> /dev/null); do
+        cp "${FILE}" ${SCRIPT_DIR}
+    done
+    rm -fR ${SCRIPT_DIR}/${RPM_BUILD_FOLDER}
+}
 
+update_spec() {
+    pushd ${SCRIPT_DIR}/${RPM_BUILD_FOLDER}
+    sed -i "s#@version@#${SGX_VERSION}#" SPECS/${DCAP_PCCS_PACKAGE_NAME}.spec
+    sed -i "s#@install_path@#${DCAP_PCCS_PACKAGE_PATH}/${DCAP_PCCS_PACKAGE_NAME}#" SPECS/${DCAP_PCCS_PACKAGE_NAME}.spec
+    popd
+}
 
-# Create the tarball
-pushd ${INSTALL_PATH} &> /dev/null
-tar -zcvf ${TARBALL_NAME} *
-popd &> /dev/null
+create_upstream_tarball() {
+    ${LINUX_INSTALLER_COMMON_DCAP_PCCS_DIR}/createTarball.sh
+    tar -xvf ${LINUX_INSTALLER_COMMON_DCAP_PCCS_DIR}/output/${TARBALL_NAME} -C ${SCRIPT_DIR}/${RPM_BUILD_FOLDER}/SOURCES
+    pushd ${SCRIPT_DIR}/${RPM_BUILD_FOLDER}/SOURCES
+    tar -zcvf ${RPM_BUILD_FOLDER}$(echo ${TARBALL_NAME}|awk -F'.' '{print "."$(NF-1)"."$(NF)}') *
+    popd
+}
+
+build_rpm_package() {
+    pushd ${SCRIPT_DIR}/${RPM_BUILD_FOLDER}
+    rpmbuild --define="_topdir `pwd`" --define='debug_package %{nil}' -ba SPECS/${DCAP_PCCS_PACKAGE_NAME}.spec
+    popd
+}
+
+main $@
