@@ -28,24 +28,25 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-import * as platformsRegService from './platformsRegService.js';
-import * as platformCollateralService from './platformCollateralService.js';
-import * as pckcertService from './pckcertService.js';
-import * as pckcrlService from './pckcrlService.js';
-import * as tcbinfoService from './tcbinfoService.js';
-import * as identityService from './identityService.js';
-import * as rootcacrlService from './rootcacrlService.js';
-import * as refreshService from './refreshService.js';
-import * as platformsService from './platformsService.js';
+import Sequelize from 'sequelize';
 
-export {
-  platformsRegService,
-  platformCollateralService,
-  pckcertService,
-  pckcrlService,
-  tcbinfoService,
-  identityService,
-  rootcacrlService,
-  refreshService,
-  platformsService,
-};
+export default class PlatformTcbs extends Sequelize.Model {
+  static init(sequelize) {
+    super.init(
+      {
+        qe_id: { type: Sequelize.DataTypes.STRING, primaryKey: true },
+        pce_id: { type: Sequelize.DataTypes.STRING, primaryKey: true },
+        cpu_svn: { type: Sequelize.DataTypes.STRING, primaryKey: true },
+        pce_svn: { type: Sequelize.DataTypes.STRING, primaryKey: true },
+        tcbm: { type: Sequelize.DataTypes.STRING },
+      },
+      {
+        tableName: 'platform_tcbs',
+        timestamps: true,
+        createdAt: 'created_time',
+        updatedAt: 'updated_time',
+        sequelize,
+      }
+    );
+  }
+}

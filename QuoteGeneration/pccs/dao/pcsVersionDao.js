@@ -28,24 +28,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-import * as platformsRegService from './platformsRegService.js';
-import * as platformCollateralService from './platformCollateralService.js';
-import * as pckcertService from './pckcertService.js';
-import * as pckcrlService from './pckcrlService.js';
-import * as tcbinfoService from './tcbinfoService.js';
-import * as identityService from './identityService.js';
-import * as rootcacrlService from './rootcacrlService.js';
-import * as refreshService from './refreshService.js';
-import * as platformsService from './platformsService.js';
 
-export {
-  platformsRegService,
-  platformCollateralService,
-  pckcertService,
-  pckcrlService,
-  tcbinfoService,
-  identityService,
-  rootcacrlService,
-  refreshService,
-  platformsService,
-};
+import { PcsVersion } from './models/index.js';
+
+// Query the version record
+export async function getPcsVersion() {
+  return PcsVersion.findOne({});
+}
+
+// Update or insert a record
+export async function upsertPcsVersion(api_version, server_addr) {
+  return await PcsVersion.upsert({
+    id: 1,
+    api_version: api_version,
+    server_addr: server_addr,
+  });
+}

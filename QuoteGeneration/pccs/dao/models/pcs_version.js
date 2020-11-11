@@ -28,24 +28,23 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-import * as platformsRegService from './platformsRegService.js';
-import * as platformCollateralService from './platformCollateralService.js';
-import * as pckcertService from './pckcertService.js';
-import * as pckcrlService from './pckcrlService.js';
-import * as tcbinfoService from './tcbinfoService.js';
-import * as identityService from './identityService.js';
-import * as rootcacrlService from './rootcacrlService.js';
-import * as refreshService from './refreshService.js';
-import * as platformsService from './platformsService.js';
+import Sequelize from 'sequelize';
 
-export {
-  platformsRegService,
-  platformCollateralService,
-  pckcertService,
-  pckcrlService,
-  tcbinfoService,
-  identityService,
-  rootcacrlService,
-  refreshService,
-  platformsService,
-};
+export default class PcsVersion extends Sequelize.Model {
+  static init(sequelize) {
+    super.init(
+      {
+        id: { type: Sequelize.DataTypes.INTEGER, primaryKey: true },
+        api_version: { type: Sequelize.DataTypes.INTEGER },
+        server_addr: { type: Sequelize.DataTypes.STRING },
+      },
+      {
+        tableName: 'pcs_version',
+        timestamps: true,
+        createdAt: 'created_time',
+        updatedAt: 'updated_time',
+        sequelize,
+      }
+    );
+  }
+}
