@@ -28,52 +28,39 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+import Constants from '../../constants/index.js';
+import * as pcsCertificatesDao from '../../dao/pcsCertificatesDao.js';
+import * as qeidentityDao from '../../dao/qeidentityDao.js';
+import * as qveidentityDao from '../../dao/qveidentityDao.js';
+import * as pckcrlDao from '../../dao/pckcrlDao.js';
+import * as CommonCacheLogic from './commonCacheLogic.js';
 
-import { PlatformsRegistered } from './models/index.js';
-import Constants from '../constants/index.js';
+export async function checkQuoteVerificationCollateral() {
+  // pck crl
+  let pckcrl = await pckcrlDao.getPckCrl(Constants.CA_PROCESSOR);
+  if (pckcrl == null) {
+    await CommonCacheLogic.getPckCrlFromPCS(Constants.CA_PROCESSOR);
+  }
+  pckcrl = await pckcrlDao.getPckCrl(Constants.CA_PLATFORM);
+  if (pckcrl == null) {
+    await CommonCacheLogic.getPckCrlFromPCS(Constants.CA_PLATFORM);
+  }
 
-export async function findRegisteredPlatform(regDataJson) {
-  return await PlatformsRegistered.findOne({
-    where: {
-      qe_id: regDataJson.qe_id,
-      pce_id: regDataJson.pce_id,
-      cpu_svn: regDataJson.cpu_svn,
-      pce_svn: regDataJson.pce_svn,
-      platform_manifest: regDataJson.platform_manifest,
-      state: Constants.PLATF_REG_NEW,
-    },
-  });
-}
-
-export async function findRegisteredPlatforms(state) {
-  return await PlatformsRegistered.findAll({
-    attributes: [
-      'qe_id',
-      'pce_id',
-      'cpu_svn',
-      'pce_svn',
-      'platform_manifest',
-      'enc_ppid',
-    ],
-    where: { state: state },
-  });
-}
-
-export async function registerPlatform(regDataJson, state) {
-  return await PlatformsRegistered.upsert({
-    qe_id: regDataJson.qe_id,
-    pce_id: regDataJson.pce_id,
-    cpu_svn: regDataJson.cpu_svn,
-    pce_svn: regDataJson.pce_svn,
-    enc_ppid: regDataJson.enc_ppid,
-    platform_manifest: regDataJson.platform_manifest,
-    state: state,
-  });
-}
-
-export async function deleteRegisteredPlatforms(state) {
-  await PlatformsRegistered.update(
-    { state: Constants.PLATF_REG_DELETED },
-    { where: { state: state } }
+  // QE identity
+  const qeid = await qeidentityDao.getQeIdentity();
+  if (qeid == null) {
+    await CommonCacheLogic.getQeIdentityFromPCS();
+  }
+  // QVE identity
+  const qveid = await qveidentityDao.getQveIdentity();
+  if (qveid == null) {
+    await CommonCacheLogic.getQveIdentityFromPCS();
+  }
+  // Root CA crl
+  let rootca = await pcsCertificatesDao.getCertificateById(
+    Constants.PROCESSOR_ROOT_CERT_ID
   );
+  if (rootca == null || rootca.crl == null) {
+    await CommonCacheLogic.getRootCACrlFromPCS(rootca);
+  }
 }

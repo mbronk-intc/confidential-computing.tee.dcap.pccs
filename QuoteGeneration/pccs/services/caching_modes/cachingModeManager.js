@@ -28,52 +28,82 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+class CachingModeManager {
+  constructor() {
+    this._mode = null;
+    if (this.instance) {
+      return this.instance;
+    }
+    this.instance = this;
+  }
+  set cachingMode(mode) {
+    this._mode = mode;
+  }
+  get cachingMode() {
+    return this._mode;
+  }
 
-import { PlatformsRegistered } from './models/index.js';
-import Constants from '../constants/index.js';
+  async getPckCertFromPCS(
+    qeid,
+    cpusvn,
+    pcesvn,
+    pceid,
+    enc_ppid,
+    platform_manifest
+  ) {
+    return this._mode.getPckCertFromPCS(
+      qeid,
+      cpusvn,
+      pcesvn,
+      pceid,
+      enc_ppid,
+      platform_manifest
+    );
+  }
 
-export async function findRegisteredPlatform(regDataJson) {
-  return await PlatformsRegistered.findOne({
-    where: {
-      qe_id: regDataJson.qe_id,
-      pce_id: regDataJson.pce_id,
-      cpu_svn: regDataJson.cpu_svn,
-      pce_svn: regDataJson.pce_svn,
-      platform_manifest: regDataJson.platform_manifest,
-      state: Constants.PLATF_REG_NEW,
-    },
-  });
+  async getQeIdentityFromPCS() {
+    return this._mode.getQeIdentityFromPCS();
+  }
+
+  async getQveIdentityFromPCS() {
+    return this._mode.getQveIdentityFromPCS();
+  }
+
+  async getPckCrlFromPCS(ca) {
+    return this._mode.getPckCrlFromPCS(ca);
+  }
+
+  async getRootCACrlFromPCS(rootca) {
+    return this._mode.getRootCACrlFromPCS(rootca);
+  }
+
+  async getTcbInfoFromPCS(fmspc) {
+    return this._mode.getTcbInfoFromPCS(fmspc);
+  }
+
+  isRefreshable() {
+    return this._mode.isRefreshable();
+  }
+
+  async registerPlatforms(isCached, regDataJson) {
+    return this._mode.registerPlatforms(isCached, regDataJson);
+  }
+
+  async processNotAvailableTcbs(
+    qeid,
+    pceid,
+    enc_ppid,
+    platform_manifest,
+    pckcerts_not_available
+  ) {
+    return this._mode.processNotAvailableTcbs(
+      qeid,
+      pceid,
+      enc_ppid,
+      platform_manifest,
+      pckcerts_not_available
+    );
+  }
 }
 
-export async function findRegisteredPlatforms(state) {
-  return await PlatformsRegistered.findAll({
-    attributes: [
-      'qe_id',
-      'pce_id',
-      'cpu_svn',
-      'pce_svn',
-      'platform_manifest',
-      'enc_ppid',
-    ],
-    where: { state: state },
-  });
-}
-
-export async function registerPlatform(regDataJson, state) {
-  return await PlatformsRegistered.upsert({
-    qe_id: regDataJson.qe_id,
-    pce_id: regDataJson.pce_id,
-    cpu_svn: regDataJson.cpu_svn,
-    pce_svn: regDataJson.pce_svn,
-    enc_ppid: regDataJson.enc_ppid,
-    platform_manifest: regDataJson.platform_manifest,
-    state: state,
-  });
-}
-
-export async function deleteRegisteredPlatforms(state) {
-  await PlatformsRegistered.update(
-    { state: Constants.PLATF_REG_DELETED },
-    { where: { state: state } }
-  );
-}
+export const cachingModeManager = new CachingModeManager();

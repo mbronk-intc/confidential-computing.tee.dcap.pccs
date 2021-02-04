@@ -28,52 +28,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+import { v4 as uuidv4 } from 'uuid';
+import logger from '../utils/Logger.js';
 
-import { PlatformsRegistered } from './models/index.js';
-import Constants from '../constants/index.js';
-
-export async function findRegisteredPlatform(regDataJson) {
-  return await PlatformsRegistered.findOne({
-    where: {
-      qe_id: regDataJson.qe_id,
-      pce_id: regDataJson.pce_id,
-      cpu_svn: regDataJson.cpu_svn,
-      pce_svn: regDataJson.pce_svn,
-      platform_manifest: regDataJson.platform_manifest,
-      state: Constants.PLATF_REG_NEW,
-    },
-  });
-}
-
-export async function findRegisteredPlatforms(state) {
-  return await PlatformsRegistered.findAll({
-    attributes: [
-      'qe_id',
-      'pce_id',
-      'cpu_svn',
-      'pce_svn',
-      'platform_manifest',
-      'enc_ppid',
-    ],
-    where: { state: state },
-  });
-}
-
-export async function registerPlatform(regDataJson, state) {
-  return await PlatformsRegistered.upsert({
-    qe_id: regDataJson.qe_id,
-    pce_id: regDataJson.pce_id,
-    cpu_svn: regDataJson.cpu_svn,
-    pce_svn: regDataJson.pce_svn,
-    enc_ppid: regDataJson.enc_ppid,
-    platform_manifest: regDataJson.platform_manifest,
-    state: state,
-  });
-}
-
-export async function deleteRegisteredPlatforms(state) {
-  await PlatformsRegistered.update(
-    { state: Constants.PLATF_REG_DELETED },
-    { where: { state: state } }
-  );
+export default function addRequestId(req, res, next) {
+  const headerName = 'Request-ID';
+  req['requestId'] = req.headers[headerName] || uuidv4().replace(/-/g, '');
+  logger.info('Client Request-ID : ' + req.requestId);
+  res.setHeader(headerName, req.requestId);
+  next();
 }
