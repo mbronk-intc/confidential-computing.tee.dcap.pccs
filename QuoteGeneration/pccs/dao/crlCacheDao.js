@@ -29,36 +29,25 @@
  *
  */
 
-import { identityService } from '../services/index.js';
-import PccsStatus from '../constants/pccs_status_code.js';
-import Constants from '../constants/index.js';
+import { CrlCache } from './models/index.js';
 
-async function getEnclaveIdentity(req, res, next, enclave_id) {
-  try {
-    // call service
-    let enclaveIdentityJson = await identityService.getEnclaveIdentity(
-      enclave_id
-    );
-
-    // send response
-    res
-      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .header(
-        Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN,
-        enclaveIdentityJson[Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN]
-      )
-      .header('Content-Type', 'application/json')
-      .send(enclaveIdentityJson['identity']);
-  } catch (err) {
-    next(err);
-  }
+// Query the CRL by primary key 'cdp_url'
+export async function getCrl(cdp_url) {
+  let crl_cache = await CrlCache.findByPk(cdp_url);
+  if (crl_cache) {
+    return crl_cache.crl;
+  } else return null;
 }
 
-export async function getEcdsaQeIdentity(req, res, next) {
-  return getEnclaveIdentity(req, res, next, Constants.QE_IDENTITY_ID);
+// Update or insert a record
+export async function upsertCrl(cdp_url, crl) {
+  return await CrlCache.upsert({
+    cdp_url: cdp_url,
+    crl: crl,
+  });
 }
 
-export async function getQveIdentity(req, res, next) {
-  return getEnclaveIdentity(req, res, next, Constants.QVE_IDENTITY_ID);
+// Get all cached CRLs
+export async function getAllCrls() {
+  return await CrlCache.findAll();
 }
-

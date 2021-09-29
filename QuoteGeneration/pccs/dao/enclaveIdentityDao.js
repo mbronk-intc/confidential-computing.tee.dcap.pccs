@@ -29,36 +29,39 @@
  *
  */
 
-import { identityService } from '../services/index.js';
-import PccsStatus from '../constants/pccs_status_code.js';
 import Constants from '../constants/index.js';
+import PccsError from '../utils/PccsError.js';
+import PccsStatus from '../constants/pccs_status_code.js';
+import { EnclaveIdentities, sequelize } from './models/index.js';
 
-async function getEnclaveIdentity(req, res, next, enclave_id) {
-  try {
-    // call service
-    let enclaveIdentityJson = await identityService.getEnclaveIdentity(
-      enclave_id
-    );
-
-    // send response
-    res
-      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .header(
-        Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN,
-        enclaveIdentityJson[Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN]
-      )
-      .header('Content-Type', 'application/json')
-      .send(enclaveIdentityJson['identity']);
-  } catch (err) {
-    next(err);
-  }
+export async function upsertEnclaveIdentity(id, identity) {
+  return await EnclaveIdentities.upsert({
+    id: id,
+    identity: identity,
+    root_cert_id: Constants.PROCESSOR_ROOT_CERT_ID,
+    signing_cert_id: Constants.PROCESSOR_SIGNING_CERT_ID,
+  });
 }
 
-export async function getEcdsaQeIdentity(req, res, next) {
-  return getEnclaveIdentity(req, res, next, Constants.QE_IDENTITY_ID);
+//Query EnclaveIdentity
+export async function getEnclaveIdentity(id) {
+  const sql =
+    'select a.*,' +
+    ' (select cert from pcs_certificates where id=a.root_cert_id) as root_cert,' +
+    ' (select cert from pcs_certificates where id=a.signing_cert_id) as signing_cert' +
+    ' from enclave_identities a ' +
+    ' where a.id=$id';
+  const enclave_identity = await sequelize.query(sql, {
+    type: sequelize.QueryTypes.SELECT,
+    bind: { id: id },
+  });
+  if (enclave_identity.length == 0) return null;
+  else if (enclave_identity.length == 1) {
+    if (
+      enclave_identity[0].root_cert != null &&
+      enclave_identity[0].signing_cert != null
+    )
+      return enclave_identity[0];
+    else return null;
+  } else throw new PccsError(PccsStatus.PCCS_STATUS_INTERNAL_ERROR);
 }
-
-export async function getQveIdentity(req, res, next) {
-  return getEnclaveIdentity(req, res, next, Constants.QVE_IDENTITY_ID);
-}
-

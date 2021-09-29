@@ -29,36 +29,28 @@
  *
  */
 
-import { identityService } from '../services/index.js';
+import { crlService } from '../services/index.js';
 import PccsStatus from '../constants/pccs_status_code.js';
-import Constants from '../constants/index.js';
 
-async function getEnclaveIdentity(req, res, next, enclave_id) {
+export async function getCrl(req, res, next) {
+  const MAX_URL_LENGTH = 2048;
+
   try {
+    // validate request parameters
+    let uri = req.query.uri;
+    if (!uri || uri.length > MAX_URL_LENGTH) {
+      throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+    }
+
     // call service
-    let enclaveIdentityJson = await identityService.getEnclaveIdentity(
-      enclave_id
-    );
+    let crl = await crlService.getCrl(uri);
 
     // send response
     res
       .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .header(
-        Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN,
-        enclaveIdentityJson[Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN]
-      )
-      .header('Content-Type', 'application/json')
-      .send(enclaveIdentityJson['identity']);
+      .header('Content-Type', 'application/pkix-crl')
+      .send(crl);
   } catch (err) {
     next(err);
   }
 }
-
-export async function getEcdsaQeIdentity(req, res, next) {
-  return getEnclaveIdentity(req, res, next, Constants.QE_IDENTITY_ID);
-}
-
-export async function getQveIdentity(req, res, next) {
-  return getEnclaveIdentity(req, res, next, Constants.QVE_IDENTITY_ID);
-}
-

@@ -28,37 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+import * as crlCacheDao from '../dao/crlCacheDao';
+import { cachingModeManager } from './caching_modes/cachingModeManager.js';
 
-import { identityService } from '../services/index.js';
-import PccsStatus from '../constants/pccs_status_code.js';
-import Constants from '../constants/index.js';
+export async function getCrl(uri) {
+  let crl = await crlCacheDao.getCrl(uri);
 
-async function getEnclaveIdentity(req, res, next, enclave_id) {
-  try {
-    // call service
-    let enclaveIdentityJson = await identityService.getEnclaveIdentity(
-      enclave_id
-    );
-
-    // send response
-    res
-      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .header(
-        Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN,
-        enclaveIdentityJson[Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN]
-      )
-      .header('Content-Type', 'application/json')
-      .send(enclaveIdentityJson['identity']);
-  } catch (err) {
-    next(err);
+  if (!crl) {
+    crl = await cachingModeManager.getCrlFromPCS(uri);
   }
-}
 
-export async function getEcdsaQeIdentity(req, res, next) {
-  return getEnclaveIdentity(req, res, next, Constants.QE_IDENTITY_ID);
+  return crl;
 }
-
-export async function getQveIdentity(req, res, next) {
-  return getEnclaveIdentity(req, res, next, Constants.QVE_IDENTITY_ID);
-}
-

@@ -28,37 +28,22 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+import Sequelize from 'sequelize';
 
-import { identityService } from '../services/index.js';
-import PccsStatus from '../constants/pccs_status_code.js';
-import Constants from '../constants/index.js';
-
-async function getEnclaveIdentity(req, res, next, enclave_id) {
-  try {
-    // call service
-    let enclaveIdentityJson = await identityService.getEnclaveIdentity(
-      enclave_id
+export default class CrlCache extends Sequelize.Model {
+  static init(sequelize) {
+    super.init(
+      {
+        cdp_url: { type: Sequelize.DataTypes.STRING, primaryKey: true },
+        crl: { type: Sequelize.DataTypes.BLOB },
+      },
+      {
+        tableName: 'crl_cache',
+        timestamps: true,
+        createdAt: 'created_time',
+        updatedAt: 'updated_time',
+        sequelize,
+      }
     );
-
-    // send response
-    res
-      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
-      .header(
-        Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN,
-        enclaveIdentityJson[Constants.SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN]
-      )
-      .header('Content-Type', 'application/json')
-      .send(enclaveIdentityJson['identity']);
-  } catch (err) {
-    next(err);
   }
 }
-
-export async function getEcdsaQeIdentity(req, res, next) {
-  return getEnclaveIdentity(req, res, next, Constants.QE_IDENTITY_ID);
-}
-
-export async function getQveIdentity(req, res, next) {
-  return getEnclaveIdentity(req, res, next, Constants.QVE_IDENTITY_ID);
-}
-
