@@ -1,14 +1,14 @@
 {
-    "HTTPS_PORT" : 8081,
-    "hosts" : "127.0.0.1",
-    "uri": "https://api.trustedservices.intel.com/sgx/certification/v4/",
+    "HTTPS_PORT" : 8083,
+    "hosts" : "0.0.0.0",
+    "uri": "https://sbx.api.trustedservices.intel.com/sgx/certification/v4/",
     "ApiKey": "",
-    "proxy" : "",
+    "proxy": "",
     "RefreshSchedule": "0 0 1 * * *",
     "UserTokenHash" : "",
     "AdminTokenHash" : "",
-    "CachingFillMode" : "LAZY",
-    "LogLevel" : "info",
+    "CachingFillMode" : "OFFLINE",
+    "LogLevel" : "debug",
     "DB_CONFIG" : "sqlite",
     "sqlite" : {
         "database" : "database",
@@ -27,7 +27,7 @@
                 "freezeTableName": true
             },
             "logging" : false, 
-            "storage": "pckcache.db"
+            "storage": "test_offline.db"
         }
     }, 
     "mysql" : {
