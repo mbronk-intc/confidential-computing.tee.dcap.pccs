@@ -29,26 +29,45 @@
  *
  */
 
-import * as platformsController from './platformsController.js';
-import * as platformCollateralController from './platformCollateralController.js';
-import * as pckcertController from './pckcertController.js';
-import * as pckcrlController from './pckcrlController.js';
-import * as tcbinfoController from './tcbinfoController.js';
-import * as identityController from './identityController.js';
-import * as rootcacrlController from './rootcacrlController.js';
-import * as refreshController from './refreshController.js';
-import * as crlController from './crlController.js';
-import * as appraisalPolicyController from './appraisalPolicyController.js';
+import { appraisalPolicyService } from '../services/index.js';
+import PccsError from '../utils/PccsError.js';
+import PccsStatus from '../constants/pccs_status_code.js';
+import Constants from '../constants/index.js';
 
-export {
-  platformsController,
-  platformCollateralController,
-  pckcertController,
-  pckcrlController,
-  tcbinfoController,
-  identityController,
-  rootcacrlController,
-  refreshController,
-  crlController,
-  appraisalPolicyController,
-};
+export async function putAppraisalPolicy(req, res, next) {
+  try {
+    // // call policy service
+    let id = await appraisalPolicyService.putAppraisalPolicy(req.body);
+
+    // send response
+    res
+      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
+      .send(id);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getAppraisalPolicy(req, res, next) {
+  try {
+    const FMSPC_SIZE = 12;
+    let fmspc = req.query.fmspc;
+    if (!fmspc || fmspc.length != FMSPC_SIZE) {
+      throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
+    }
+
+    fmspc = fmspc.toUpperCase();
+
+    let policies = await appraisalPolicyService.getDefaultAppraisalPolicies(fmspc);
+    if (policies.length == 0) {
+      throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
+    }
+
+    // send response
+    res
+      .status(PccsStatus.PCCS_STATUS_SUCCESS[0])
+      .send(policies.map(policyRecord => policyRecord.policy).join(','));
+  } catch (err) {
+    next(err);
+  }
+}

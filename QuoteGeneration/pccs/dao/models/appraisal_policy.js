@@ -28,27 +28,25 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+import Sequelize from 'sequelize';
 
-import * as platformsController from './platformsController.js';
-import * as platformCollateralController from './platformCollateralController.js';
-import * as pckcertController from './pckcertController.js';
-import * as pckcrlController from './pckcrlController.js';
-import * as tcbinfoController from './tcbinfoController.js';
-import * as identityController from './identityController.js';
-import * as rootcacrlController from './rootcacrlController.js';
-import * as refreshController from './refreshController.js';
-import * as crlController from './crlController.js';
-import * as appraisalPolicyController from './appraisalPolicyController.js';
-
-export {
-  platformsController,
-  platformCollateralController,
-  pckcertController,
-  pckcrlController,
-  tcbinfoController,
-  identityController,
-  rootcacrlController,
-  refreshController,
-  crlController,
-  appraisalPolicyController,
-};
+export default class AppraisalPolicy extends Sequelize.Model {
+  static init(sequelize) {
+    super.init(
+      {
+        id: { type: Sequelize.DataTypes.STRING, primaryKey: true },
+        type: { type: Sequelize.DataTypes.INTEGER},
+        policy: { type: Sequelize.DataTypes.TEXT },
+        is_default: { type: Sequelize.DataTypes.INTEGER },
+        fmspc: { type: Sequelize.DataTypes.STRING},
+      },
+      {
+        tableName: 'appraisal_policies',
+        timestamps: true,
+        createdAt: 'created_time',
+        updatedAt: 'updated_time',
+        sequelize,
+      }
+    );
+  }
+}

@@ -29,26 +29,35 @@
  *
  */
 
-import * as platformsController from './platformsController.js';
-import * as platformCollateralController from './platformCollateralController.js';
-import * as pckcertController from './pckcertController.js';
-import * as pckcrlController from './pckcrlController.js';
-import * as tcbinfoController from './tcbinfoController.js';
-import * as identityController from './identityController.js';
-import * as rootcacrlController from './rootcacrlController.js';
-import * as refreshController from './refreshController.js';
-import * as crlController from './crlController.js';
-import * as appraisalPolicyController from './appraisalPolicyController.js';
+import { AppraisalPolicy } from './models/index.js';
 
-export {
-  platformsController,
-  platformCollateralController,
-  pckcertController,
-  pckcrlController,
-  tcbinfoController,
-  identityController,
-  rootcacrlController,
-  refreshController,
-  crlController,
-  appraisalPolicyController,
-};
+// Query the appraisal policy by primary key 'id'
+export async function getAppraisalPolicy(id) {
+  return await AppraisalPolicy.findByPk(id);
+}
+
+export async function getDefaultAppraisalPolicies(fmspc) {
+  const policies = await AppraisalPolicy.findAll({
+    where: {
+      is_default: true,
+      fmspc: fmspc
+    },
+    attributes: ['policy'] // Only retrieve the 'policy' column
+  });
+
+  return policies;
+}
+
+// Update or insert a record
+export async function upsertAppraisalPolicy(apJson) {
+  if (apJson.is_default) {
+    // unset the is_default for any existing records with the same fmspc
+    await AppraisalPolicy.update(
+      { is_default: false },
+      {
+        where: { type: apJson.type, fmspc: apJson.fmspc, is_default: true },
+      }
+    );
+  }
+  return await AppraisalPolicy.upsert(apJson);
+}

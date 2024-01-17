@@ -28,27 +28,26 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+import logger from '../utils/Logger.js';
 
-import * as platformsController from './platformsController.js';
-import * as platformCollateralController from './platformCollateralController.js';
-import * as pckcertController from './pckcertController.js';
-import * as pckcrlController from './pckcrlController.js';
-import * as tcbinfoController from './tcbinfoController.js';
-import * as identityController from './identityController.js';
-import * as rootcacrlController from './rootcacrlController.js';
-import * as refreshController from './refreshController.js';
-import * as crlController from './crlController.js';
-import * as appraisalPolicyController from './appraisalPolicyController.js';
+async function up(sequelize) {
+  await sequelize.transaction(async (t) => {
+    logger.info('DB Migration (Ver.3 -> 4) -- Start');
 
-export {
-  platformsController,
-  platformCollateralController,
-  pckcertController,
-  pckcrlController,
-  tcbinfoController,
-  identityController,
-  rootcacrlController,
-  refreshController,
-  crlController,
-  appraisalPolicyController,
-};
+    // update pcs_version table
+    logger.debug('DB Migration -- Update pcs_version table');
+    let sql = 'UPDATE pcs_version SET db_version=4,api_version=4';
+    await sequelize.query(sql);
+
+    // create appraisal_policies table
+    logger.debug('DB Migration -- create appraisal_policies');
+    sql =
+      'CREATE TABLE IF NOT EXISTS appraisal_policies (id VARCHAR(255) PRIMARY KEY, type INTEGER NOT NULL, policy TEXT NOT NULL, is_default INTEGER NOT NULL, ' +
+      'fmspc VARCHAR(255) NOT NULL, created_time DATETIME NOT NULL, updated_time DATETIME NOT NULL)';
+    await sequelize.query(sql);
+
+    logger.info('DB Migration -- Done.');
+  });
+}
+
+export default { up };
