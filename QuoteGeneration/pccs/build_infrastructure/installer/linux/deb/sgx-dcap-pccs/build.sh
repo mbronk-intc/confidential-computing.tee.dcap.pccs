@@ -31,7 +31,7 @@
 #
 
 
-set -e
+set -eu
 
 SCRIPT_DIR=$(dirname "$0")
 ROOT_DIR="${SCRIPT_DIR}/../../../../../"
@@ -42,8 +42,8 @@ LINUX_INSTALLER_COMMON_DCAP_PCCS_DIR="${LINUX_INSTALLER_COMMON_DIR}/sgx-dcap-pcc
 source ${LINUX_INSTALLER_COMMON_DCAP_PCCS_DIR}/installConfig
 DEB_FOLDER=${DCAP_PCCS_PACKAGE_NAME}-${DCAP_PCCS_VERSION}
 
-SGX_VERSION=$(awk '/STRFILEVER/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
-DEB_BUILD_FOLDER=${DCAP_PCCS_PACKAGE_NAME}-${SGX_VERSION}
+PCCS_VERSION=$1
+DEB_BUILD_FOLDER=${DCAP_PCCS_PACKAGE_NAME}-${PCCS_VERSION}
 
 main() {
     pre_build
@@ -99,7 +99,7 @@ update_version() {
     INS_VERSION=$(echo $(dpkg-parsechangelog |grep "Version" | cut -d: -f2))
     DEB_VERSION=$(echo ${INS_VERSION} | cut -d- -f2)
 
-    FULL_VERSION=${SGX_VERSION}-$(get_os_code)${DEB_VERSION}
+    FULL_VERSION=${PCCS_VERSION}-$(get_os_code)${DEB_VERSION}
     sed -i "s#${INS_VERSION}#${FULL_VERSION}#" debian/changelog
     popd
 }
@@ -113,7 +113,7 @@ update_install_path() {
 }
 
 rename_tarball() {
-    TARBALL_NAME_NEW_VERSION=$(echo ${TARBALL_NAME} | sed "s/${DCAP_PCCS_VERSION}/${SGX_VERSION}/")
+    TARBALL_NAME_NEW_VERSION=$(echo ${TARBALL_NAME} | sed "s/${DCAP_PCCS_VERSION}/${PCCS_VERSION}/")
     mv ${SCRIPT_DIR}/${TARBALL_NAME} ${SCRIPT_DIR}/${TARBALL_NAME_NEW_VERSION}
 }
 

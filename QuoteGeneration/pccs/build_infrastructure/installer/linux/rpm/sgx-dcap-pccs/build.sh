@@ -30,7 +30,7 @@
 #
 #
 
-set -e
+set -eu
 
 SCRIPT_DIR=$(dirname "$0")
 ROOT_DIR="${SCRIPT_DIR}/../../../../../"
@@ -40,8 +40,8 @@ LINUX_INSTALLER_COMMON_DCAP_PCCS_DIR="${LINUX_INSTALLER_COMMON_DIR}/sgx-dcap-pcc
 
 source ${LINUX_INSTALLER_COMMON_DCAP_PCCS_DIR}/installConfig
 
-SGX_VERSION=$(awk '/STRFILEVER/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
-RPM_BUILD_FOLDER=${DCAP_PCCS_PACKAGE_NAME}-${SGX_VERSION}
+PCCS_VERSION=$1
+RPM_BUILD_FOLDER=${DCAP_PCCS_PACKAGE_NAME}-${PCCS_VERSION}
 
 main() {
     pre_build
@@ -66,7 +66,7 @@ post_build() {
 
 update_spec() {
     pushd ${SCRIPT_DIR}/${RPM_BUILD_FOLDER}
-    sed -i "s#@version@#${SGX_VERSION}#" SPECS/${DCAP_PCCS_PACKAGE_NAME}.spec
+    sed -i "s#@version@#${PCCS_VERSION}#" SPECS/${DCAP_PCCS_PACKAGE_NAME}.spec
     sed -i "s#@install_path@#${DCAP_PCCS_PACKAGE_PATH}/${DCAP_PCCS_PACKAGE_NAME}#" SPECS/${DCAP_PCCS_PACKAGE_NAME}.spec
     popd
 }

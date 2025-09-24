@@ -145,7 +145,7 @@ def read_BOM(local_path):
 # return:                                                                      #
 ################################################################################
 def copy_txt_files(local_path):
-	home_path = os.path.realpath(os.path.join(local_path, "..", "..", "..", ".."))
+	home_path = os.path.realpath(os.path.join(local_path, "..", "..", "..", "..", ".."))
 
 	#read BOM file contents
 	lines = read_BOM(local_path)
