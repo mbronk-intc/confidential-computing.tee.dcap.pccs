@@ -37,12 +37,6 @@ function checkDependencies() {
     fi
 }
 
-function checkPCKSelectionLib() {
-    if [ ! -f "$mydir"/lib/libPCKCertSelection.so ]; then
-        echo -e "${YELLOW}Warning: lib/libPCKCertSelection.so not found. ${NC} "
-    fi
-}
-
 function promptDbMigration() {
     auto_update_db=""
     echo -e "${YELLOW}Warning: If you are upgrading PCCS from an old release, the existing cache database will be updated automatically. ${NC} "
@@ -94,8 +88,6 @@ do
         break
     elif [[ "$doconfig" == "N" || "$doconfig" == "n" ]] 
     then
-        #Check PCK Cert Selection Library
-        checkPCKSelectionLib
         exit 0
     else
         doconfig=""
@@ -293,6 +285,3 @@ then
 else
     echo -e "${YELLOW}You need to setup HTTPS key and cert for PCCS to work. For how-to please check README. ${NC} "
 fi
-
-#Check PCK Cert Selection Library
-checkPCKSelectionLib

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ * Copyright (C) 2025 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,57 +29,12 @@
  *
  */
 
-class Constants {}
-
-function define(name, value) {
-  Object.defineProperty(Constants, name, {
-    value: value,
-    enumerable: true,
-  });
+class PckCertificate {
+    constructor(pckCertFromDb, x509, tcb) {
+        this.pckCertFromDb = pckCertFromDb;
+        this.x509 = x509;
+        this.tcb = tcb;
+    }
 }
 
-define('PLATF_REG_NEW', 0);
-define('PLATF_REG_NOT_AVAILABLE', 1);
-define('PLATF_REG_DELETED', 9);
-
-define('HTTP_SUCCESS', 200);
-
-//
-define('SGX_TCBM', 'SGX-TCBm');
-define('SGX_FMSPC', 'SGX-FMSPC');
-define('SGX_PCK_CERTIFICATE_CA_TYPE', 'SGX-PCK-Certificate-CA-Type');
-
-// Certificate IDs
-define('PROCESSOR_ROOT_CERT_ID', 1);
-define('PROCESSOR_INTERMEDIATE_CERT_ID', 2);
-define('PROCESSOR_SIGNING_CERT_ID', 3);
-define('PLATFORM_INTERMEDIATE_CERT_ID', 4);
-
-define('PCK_CERT_VERSION', 3);
-
-// Product Type : SGX or TDX
-define('PROD_TYPE_SGX', 0);
-define('PROD_TYPE_TDX', 1);
-
-// Enclave Identity IDs
-define('QE_IDENTITY_ID', 1);
-define('QVE_IDENTITY_ID', 2);
-define('TDQE_IDENTITY_ID', 3);
-
-//CAs
-define('CA_PROCESSOR', 'PROCESSOR');
-define('CA_PLATFORM', 'PLATFORM');
-
-//Certchain names
-define('SGX_PCK_CERTIFICATE_ISSUER_CHAIN', 'SGX-PCK-Certificate-Issuer-Chain');
-define('TCB_INFO_ISSUER_CHAIN', 'TCB-Info-Issuer-Chain');
-define('SGX_TCB_INFO_ISSUER_CHAIN', 'SGX-TCB-Info-Issuer-Chain');
-define('SGX_ENCLAVE_IDENTITY_ISSUER_CHAIN', 'SGX-Enclave-Identity-Issuer-Chain');
-define('SGX_PCK_CRL_ISSUER_CHAIN', 'SGX-PCK-CRL-Issuer-Chain');
-
-//Update type
-define('UPDATE_TYPE_STANDARD', 'STANDARD');
-define('UPDATE_TYPE_EARLY', 'EARLY');
-define('UPDATE_TYPE_ALL', 'ALL');
-
-export default Constants;
+export default PckCertificate;

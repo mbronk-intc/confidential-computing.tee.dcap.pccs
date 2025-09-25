@@ -36,8 +36,7 @@ This is a lightweight Provisioning Certificate Caching Service implemented in no
   1. Put all the files and sub folders in this directory to your preferred place with right permissions set to launch a web service.
   2. Install dependencies if they are not already installed. Also make sure "python" is linked to "python3"<br/>
      nodejs build-essential(gcc gcc-c++ make) python3 cracklib-runtime
-  3. Goto ../../tools/PCKCertSelection/ and build libPCKCertSelection.so, copy it to ./lib/
-  4. From the root directory of your installation folder, run ./install.sh
+  3. From the root directory of your installation folder, run ./install.sh
 
 - **Windows manual installation**
 
@@ -62,10 +61,6 @@ This is a lightweight Provisioning Certificate Caching Service implemented in no
 
   6. From the root directory of your installation folder, run install.bat with administrator privilege
      This will install the required npm packages and install the Window service.
-
-  7. PCKCertSelection Library
-     You need to compile the PCKCertSelection library in ../../tools/PCKCertSelection, then put the binary files
-     (PCKCertSelectionLib.dll) in a folder that is in OS's search path, for example, %SYSTEMROOT%\system32.
 
   _**NOTE** : If a self-signed insecure key and certificate are used, you need to set USE_SECURE_CERT=FALSE when
   configuring the default QPL library (see ../qpl/README.md)_

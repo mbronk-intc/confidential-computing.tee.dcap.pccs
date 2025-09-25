@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2025 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -36,8 +36,8 @@ import * as platformTcbsDao from '../dao/platformTcbsDao.js';
 import * as platformsDao from '../dao/platformsDao.js';
 import * as fmspcTcbDao from '../dao/fmspcTcbDao.js';
 import * as pckCertchainDao from '../dao/pckCertchainDao.js';
-import * as pckLibWrapper from '../lib_wrapper/pcklib_wrapper.js';
 import { cachingModeManager } from './caching_modes/cachingModeManager.js';
+import { selectBestPckCert } from "../pckCertSelection/pckCertSelection.js";
 
 // If a new raw TCB was reported, needs to run PCK Cert Selection for this raw TCB
 export async function pckCertSelection(
@@ -54,11 +54,6 @@ export async function pckCertSelection(
   if (pck_certs == null)
     throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
 
-  let pem_certs = [];
-  for (let i = 0; i < pck_certs.length; i++) {
-    pem_certs.push(pck_certs[i].pck_cert.toString('utf8'));
-  }
-
   // Always use SGX tcb info for PCK cert selection
   let tcbinfo = await fmspcTcbDao.getTcbInfo(Constants.PROD_TYPE_SGX, fmspc, global.PCS_VERSION, Constants.UPDATE_TYPE_EARLY);
   if (tcbinfo == null) {
@@ -69,16 +64,12 @@ export async function pckCertSelection(
     throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
   }
 
-  let tcbinfo_str = tcbinfo.tcbinfo.toString('utf8');
-  let cert_index = pckLibWrapper.pck_cert_select(
-    cpusvn,
-    pcesvn,
-    pceid,
-    tcbinfo_str,
-    pem_certs,
-    pem_certs.length
-  );
-  if (cert_index == -1) {
+  let tcbInfoObject = JSON.parse(tcbinfo.tcbinfo.toString('utf8')).tcbInfo;
+
+  let selectedPckCert;
+  try {
+    selectedPckCert = selectBestPckCert(cpusvn, pcesvn, pceid, pck_certs, tcbInfoObject);
+  } catch (err) {
     throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
   }
 
@@ -88,12 +79,12 @@ export async function pckCertSelection(
     throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
   }
 
-  result[Constants.SGX_TCBM] = pck_certs[cert_index].tcbm;
+  result[Constants.SGX_TCBM] = selectedPckCert.tcbm;
   result[Constants.SGX_FMSPC] = fmspc;
   result[Constants.SGX_PCK_CERTIFICATE_CA_TYPE] = ca;
   result[Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN] =
     certchain.intmd_cert + certchain.root_cert;
-  result['cert'] = pem_certs[cert_index];
+  result['cert'] = selectedPckCert.pck_cert;
 
   // create an entry for the new TCB level in platform_tcbs table
   await platformTcbsDao.upsertPlatformTcbs(
@@ -101,7 +92,7 @@ export async function pckCertSelection(
     pceid,
     cpusvn,
     pcesvn,
-    pck_certs[cert_index].tcbm
+    selectedPckCert.tcbm
   );
 
   return result;

@@ -38,8 +38,6 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/pccs/dao/enclaveIdentityDao.js	<installdir>/dao/enclaveIdentityDao.js	0	main	STP
 <deliverydir>/pccs/dao/crlCacheDao.js	<installdir>/dao/crlCacheDao.js	0	main	STP
 <deliverydir>/pccs/dao/appraisalPolicyDao.js	<installdir>/dao/appraisalPolicyDao.js	0	main	STP
-<deliverydir>/pccs/lib/libPCKCertSelection.so	<installdir>/lib/libPCKCertSelection.so	0	main	STP
-<deliverydir>/pccs/lib_wrapper/pcklib_wrapper.js	<installdir>/lib_wrapper/pcklib_wrapper.js	0	main	STP
 <deliverydir>/pccs/middleware/auth.js	<installdir>/middleware/auth.js	0	main	STP
 <deliverydir>/pccs/middleware/error.js	<installdir>/middleware/error.js	0	main	STP
 <deliverydir>/pccs/middleware/addRequestId.js	<installdir>/middleware/addRequestId.js	0	main	STP
@@ -50,6 +48,9 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/pccs/migrations/03_db_version_3.js	<installdir>/migrations/03_db_version_3.js	0	main	STP
 <deliverydir>/pccs/migrations/04_db_version_4.js	<installdir>/migrations/04_db_version_4.js	0	main	STP
 <deliverydir>/pccs/migrations/05_db_version_5.js	<installdir>/migrations/05_db_version_5.js	0	main	STP
+<deliverydir>/pccs/pckCertSelection/PckCertificate.js	<installdir>/pckCertSelection/PckCertificate.js	0	main	STP
+<deliverydir>/pccs/pckCertSelection/Tcb.js	<installdir>/pckCertSelection/Tcb.js	0	main	STP
+<deliverydir>/pccs/pckCertSelection/pckCertSelection.js	<installdir>/pckCertSelection/pckCertSelection.js	0	main	STP
 <deliverydir>/pccs/pcs_client/pcs_client.js	<installdir>/pcs_client/pcs_client.js	0	main	STP
 <deliverydir>/pccs/routes/index.js	<installdir>/routes/index.js	0	main	STP
 <deliverydir>/pccs/services/identityService.js	<installdir>/services/identityService.js	0	main	STP

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2025 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,13 +44,13 @@ import * as enclaveIdentityDao from '../dao/enclaveIdentityDao.js';
 import * as pckCertchainDao from '../dao/pckCertchainDao.js';
 import * as pcsCertificatesDao from '../dao/pcsCertificatesDao.js';
 import * as crlCacheDao from '../dao/crlCacheDao.js';
-import * as pckLibWrapper from '../lib_wrapper/pcklib_wrapper.js';
 import * as appUtil from '../utils/apputil.js';
 import {
   PLATFORM_COLLATERAL_SCHEMA_V3,
   PLATFORM_COLLATERAL_SCHEMA_V4,
 } from './pccs_schemas.js';
 import { sequelize } from '../dao/models/index.js';
+import { selectBestPckCert } from "../pckCertSelection/pckCertSelection.js";
 
 const ajv = new Ajv();
 addFormats(ajv);
@@ -109,11 +109,11 @@ async function processPckCerts(collateralJson, version) {
     // unescape certificates
     const decodedCerts = certs.map(cert => ({
       tcbm: toUpper(cert.tcbm),
-      cert: decodeURIComponent(cert.cert)
+      pck_cert: decodeURIComponent(cert.cert)
     }));
 
-    for (const { tcbm, cert } of decodedCerts) {
-      await pckcertDao.upsertPckCert(qeId, pceId, tcbm, cert);
+    for (const { tcbm, pck_cert } of decodedCerts) {
+      await pckcertDao.upsertPckCert(qeId, pceId, tcbm, pck_cert);
     }    
 
     // We will update platforms both in cache and in the request list
@@ -127,7 +127,7 @@ async function processPckCerts(collateralJson, version) {
 
     // parse arbitary cert to get fmspc value
     const x509 = new X509();
-    if (!x509.parseCert(decodedCerts[0].cert)) {
+    if (!x509.parseCert(decodedCerts[0].pck_cert)) {
       logger.error('Invalid certificate format.');
       throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
     }
@@ -139,37 +139,33 @@ async function processPckCerts(collateralJson, version) {
     }
 
     // get tcbinfo for the fmspc
-    const tcbinfo = collaterals.tcbinfos.find((o) => o.fmspc === fmspc);
+    const tcbinfo = collaterals.tcbinfos.find((o) => o.fmspc.toUpperCase() === fmspc);
     if (!tcbinfo) {
       logger.error("Can't find TCB info.");
       throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
     }
 
-    let tcbinfoStr;
+    let tcbinfoObj;
     if (version < 4) {
-      tcbinfoStr = tcbinfo.tcbinfo_early ? JSON.stringify(tcbinfo.tcbinfo_early) :
-                   tcbinfo.tcbinfo ? JSON.stringify(tcbinfo.tcbinfo) :
-                   null;
+      tcbinfoObj = tcbinfo.tcbinfo_early ? tcbinfo.tcbinfo_early.tcbInfo :
+          (tcbinfo.tcbinfo ? tcbinfo.tcbinfo.tcbInfo :
+              null);
     } else {
-      tcbinfoStr = tcbinfo.sgx_tcbinfo_early ? JSON.stringify(tcbinfo.sgx_tcbinfo_early) :
-              (tcbinfo.sgx_tcbinfo ? JSON.stringify(tcbinfo.sgx_tcbinfo) :
+      tcbinfoObj = tcbinfo.sgx_tcbinfo_early ? tcbinfo.sgx_tcbinfo_early.tcbInfo :
+          (tcbinfo.sgx_tcbinfo ? tcbinfo.sgx_tcbinfo.tcbInfo :
               null);
     }
-    if (tcbinfoStr === null) {
+    if (tcbinfoObj === null) {
       logger.error("Can't find TCB info.");
       throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
     }
+
     for (let platform of platformsCleaned) {
-      // get the best cert with PCKCertSelectionTool
-      const cert_index = pckLibWrapper.pck_cert_select(
-        platform.cpu_svn,
-        platform.pce_svn,
-        platform.pce_id,
-        tcbinfoStr,
-        decodedCerts.map(c => c.cert),
-        decodedCerts.length
-      );
-      if (cert_index === -1) {
+      // get the best cert
+      let selectedPckCert;
+      try {
+        selectedPckCert = selectBestPckCert(platform.cpu_svn, platform.pce_svn, platform.pce_id, decodedCerts, tcbinfoObj);
+      } catch (err) {
         logger.error('Failed to select the best certificate for ' + platform);
         throw new PccsError(PccsStatus.PCCS_STATUS_INVALID_REQ);
       }
@@ -180,7 +176,7 @@ async function processPckCerts(collateralJson, version) {
         pceId,
         toUpper(platform.cpu_svn),
         toUpper(platform.pce_svn),
-        decodedCerts[cert_index].tcbm
+        selectedPckCert.tcbm
       );
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2025 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -43,10 +43,10 @@ import * as pckCertchainDao from '../dao/pckCertchainDao.js';
 import * as pcsCertificatesDao from '../dao/pcsCertificatesDao.js';
 import * as crlCacheDao from '../dao/crlCacheDao.js';
 import * as pcsClient from '../pcs_client/pcs_client.js';
-import * as pckLibWrapper from '../lib_wrapper/pcklib_wrapper.js';
 import * as appUtil from '../utils/apputil.js';
 import { sequelize } from '../dao/models/index.js';
 import { cachingModeManager } from './caching_modes/cachingModeManager.js';
+import { selectBestPckCert } from "../pckCertSelection/pckCertSelection.js";
 
 // Refresh the enclave_identities table
 async function refresh_enclave_identities() {
@@ -116,9 +116,8 @@ async function refresh_all_pckcerts(fmspc_array) {
   platformTcbs.sort(sorter('qe_id', 'pce_id'));
   let last_qe_id = '';
   let last_pce_id = '';
-  let tcbinfo_str;
   let pckcerts;
-  let pem_certs;
+  let tcbInfoObj;
   let pck_certchain = null;
   let fmspc;
   let ca_type;
@@ -177,15 +176,12 @@ async function refresh_all_pckcerts(fmspc_array) {
       }
 
       // get tcbinfo for this fmspc
+
       pck_server_res = await pcsClient.getTcb(Constants.PROD_TYPE_SGX, fmspc, global.PCS_VERSION, Constants.UPDATE_TYPE_EARLY);
       if (pck_server_res.statusCode != Constants.HTTP_SUCCESS) {
         throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
       }
-
-      const tcbinfo = pck_server_res.rawBody;
-      tcbinfo_str = pck_server_res.body;
-
-      pem_certs = pckcerts.map((o) => decodeURIComponent(o.cert));
+      tcbInfoObj = JSON.parse(pck_server_res.body).tcbInfo;
 
       // flush and add PCK certs
       await pckcertDao.deleteCerts(platformTcb.qe_id, platformTcb.pce_id);
@@ -198,24 +194,27 @@ async function refresh_all_pckcerts(fmspc_array) {
         );
       }
     }
-    // get the best cert with PCKCertSelectionTool
-    let cert_index = pckLibWrapper.pck_cert_select(
-      platformTcb.cpu_svn,
-      platformTcb.pce_svn,
-      platformTcb.pce_id,
-      tcbinfo_str,
-      pem_certs,
-      pem_certs.length
-    );
-    if (cert_index == -1) {
+
+    // unescape certificates
+    const decodedCerts = pckcerts.map(cert => ({
+      tcbm: cert.tcbm.toUpperCase(),
+      pck_cert: decodeURIComponent(cert.cert)
+    }));
+
+    // get the best cert
+    let selectedPckCert;
+    try {
+      selectedPckCert = selectBestPckCert(platformTcb.cpu_svn, platformTcb.pce_svn, platformTcb.pce_id, decodedCerts, tcbInfoObj);
+    } catch (err) {
       throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
     }
+
     await platformTcbsDao.upsertPlatformTcbs(
       platformTcb.qe_id,
       platformTcb.pce_id,
       platformTcb.cpu_svn,
       platformTcb.pce_svn,
-      pckcerts[cert_index].tcbm
+      selectedPckCert.tcbm
     );
 
     if (pck_certchain) {

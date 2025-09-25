@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2025 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -43,10 +43,10 @@ import * as fmspcTcbDao from '../../dao/fmspcTcbDao.js';
 import * as platformsDao from '../../dao/platformsDao.js';
 import * as crlCacheDao from '../../dao/crlCacheDao.js';
 import * as pcsClient from '../../pcs_client/pcs_client.js';
-import * as pckLibWrapper from '../../lib_wrapper/pcklib_wrapper.js';
 import * as appUtil from '../../utils/apputil.js';
 import { sequelize } from '../../dao/models/index.js';
 import { cachingModeManager } from '../caching_modes/cachingModeManager.js';
+import { selectBestPckCert } from "../../pckCertSelection/pckCertSelection.js";
 
 async function getPckServerResponse(platform_manifest, enc_ppid, pceid) {
   if (platform_manifest) {
@@ -60,8 +60,8 @@ async function getPckServerResponse(platform_manifest, enc_ppid, pceid) {
 }
 
 function filterPckCerts(pckcerts) {
-  const pckcerts_not_available = pckcerts.filter(pckCert => pckCert.cert === 'Not available');
-  const pckcerts_valid = pckcerts.filter(pckCert => pckCert.cert !== 'Not available');
+  const pckcerts_not_available = pckcerts.filter(pckCert => pckCert.pck_cert === 'Not available');
+  const pckcerts_valid = pckcerts.filter(pckCert => pckCert.pck_cert !== 'Not available');
   return { pckcerts_valid, pckcerts_not_available };
 }
 
@@ -173,8 +173,13 @@ export async function getPckCertFromPCS(
   // Parse the response body
   let pckcerts = parsePckServerResponseBody(pck_server_res.body);
 
+  const decodedCerts = pckcerts.map(cert => ({
+    tcbm: cert.tcbm.toUpperCase(),
+    pck_cert: decodeURIComponent(cert.cert)
+  }));
+
   // The latest PCS service may return 'Not available' in the certs array, need to filter them out
-  const { pckcerts_valid, pckcerts_not_available } = filterPckCerts(pckcerts);
+  const { pckcerts_valid, pckcerts_not_available } = filterPckCerts(decodedCerts);
   await cachingModeManager.processNotAvailableTcbs(
     qeid,
     pceid,
@@ -188,13 +193,11 @@ export async function getPckCertFromPCS(
     throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
   }
 
-  // Make PEM certificates array
-  let pem_certs = pckcerts_valid.map((o) => decodeURIComponent(o.cert));
   const { fmspc, ca_type } = getFmspcAndCaType(pck_server_res);
 
   // get tcbInfos for this fmspc
   const tcb_infos = await fetchTcbInfo(fmspc);
-  let tcb_info_str = tcb_infos.sgx_early ? tcb_infos.sgx_early.tcbinfo_str : tcb_infos.sgx_standard.tcbinfo_str;
+  let tcbInfoObj = JSON.parse(tcb_infos.sgx_early ? tcb_infos.sgx_early.tcbinfo_str : tcb_infos.sgx_standard.tcbinfo_str).tcbInfo;
 
   // Before we flush the caching database, get current raw TCBs that are already cached
   // We need to re-run PCK cert selection tool for existing raw TCB levels due to certs change
@@ -206,7 +209,7 @@ export async function getPckCertFromPCS(
 
     await pckcertDao.deleteCerts(qeid, pceid, {transaction: t});
     await Promise.all(pckcerts_valid.map(pckcert => 
-      pckcertDao.upsertPckCert(qeid, pceid, pckcert.tcbm, decodeURIComponent(pckcert.cert), {transaction: t})
+      pckcertDao.upsertPckCert(qeid, pceid, pckcert.tcbm, pckcert.pck_cert, {transaction: t})
     ));
 
     await platformTcbsDao.deletePlatformTcbsById(qeid, pceid, {transaction: t});
@@ -218,18 +221,12 @@ export async function getPckCertFromPCS(
     await pcsCertificatesDao.upsertPckCertificateIssuerChain(ca_type, pck_certchain, {transaction: t});
     await pcsCertificatesDao.upsertTcbInfoIssuerChain(tcb_infos.sgx_standard.tcbinfo_issuer_chain, {transaction: t});
 
-    // Re-run PCK cert selection tool for all cached TCB levels
+    // Re-run PCK cert selection for all cached TCB levels
     for (const platform_tcb of cached_platform_tcbs) {
-      let cert_index = pckLibWrapper.pck_cert_select(
-        platform_tcb.cpu_svn,
-        platform_tcb.pce_svn,
-        platform_tcb.pce_id,
-        tcb_info_str,
-        pem_certs,
-        pem_certs.length
-      );
-
-      if (cert_index == -1) {
+      let selectedPckCert;
+      try {
+        selectedPckCert = selectBestPckCert(platform_tcb.cpu_svn, platform_tcb.pce_svn, platform_tcb.pce_id, pckcerts_valid, tcbInfoObj);
+      } catch (err) {
         throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
       }
 
@@ -238,23 +235,18 @@ export async function getPckCertFromPCS(
         platform_tcb.pce_id,
         platform_tcb.cpu_svn,
         platform_tcb.pce_svn,
-        pckcerts_valid[cert_index].tcbm,
+        selectedPckCert.tcbm,
         { transaction: t }
       );
     }  
   });
 
   if (!cpusvn || !pcesvn) return {}; // end here if raw TCB not provided
-  // get the best cert with PCKCertSelectionTool for this raw TCB
-  let cert_index = pckLibWrapper.pck_cert_select(
-    cpusvn,
-    pcesvn,
-    pceid,
-    tcb_info_str,
-    pem_certs,
-    pem_certs.length
-  );
-  if (cert_index == -1) {
+  // get the best cert for this raw TCB
+  let selectedPckCert;
+  try {
+    selectedPckCert = selectBestPckCert(cpusvn, pcesvn, pceid, pckcerts_valid, tcbInfoObj);
+  } catch (err) {
     throw new PccsError(PccsStatus.PCCS_STATUS_NO_CACHE_DATA);
   }
 
@@ -267,15 +259,15 @@ export async function getPckCertFromPCS(
       pceid,
       cpusvn,
       pcesvn,
-      pckcerts_valid[cert_index].tcbm
+      selectedPckCert.tcbm
     );
   }
 
-  result[Constants.SGX_TCBM] = pckcerts_valid[cert_index].tcbm;
+  result[Constants.SGX_TCBM] = selectedPckCert.tcbm;
   result[Constants.SGX_FMSPC] = fmspc;
   result[Constants.SGX_PCK_CERTIFICATE_CA_TYPE] = ca_type;
   result[Constants.SGX_PCK_CERTIFICATE_ISSUER_CHAIN] = pck_certchain;
-  result['cert'] = pem_certs[cert_index];
+  result['cert'] = selectedPckCert.pck_cert;
 
   return result;
 }

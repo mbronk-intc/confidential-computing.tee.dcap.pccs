@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2025 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,6 +37,9 @@ import Constants from '../constants/index.js';
 const SGX_EXTENSIONS_OID = '1.2.840.113741.1.13.1';
 const TAG_OID = 6;
 const SGX_EXTENSIONS_FMSPC_OID = '1.2.840.113741.1.13.1.4';
+const SGX_EXTENSIONS_PCEID_OID = '1.2.840.113741.1.13.1.3';
+const SGX_EXTENSIONS_PPID_OID = '1.2.840.113741.1.13.1.1';
+const SGX_EXTENSIONS_TCB_OID = '1.2.840.113741.1.13.1.2';
 const X509_EXTENSIONS_CDP_OID = '2.5.29.31';
 const { Certificate } = x509;
 const { ASN1 } = asn1;
@@ -50,6 +53,11 @@ class X509 {
     this.fmspc = null;
     this.cdp_uri = null;
     this.ca = null;
+    this.pceId = null;
+    this.ppid = null;
+    this.cpusvn = null;
+    this.pcesvn = null;
+    this.version = null;
   }
   parseCert(cert_buffer) {
     try {
@@ -58,6 +66,8 @@ class X509 {
       let extensions = cert.extensions;
       let sgx_extensions = null;
       let cdp_extensions = null;
+
+      this.version = cert.version;
 
       // parse the issuer CN
       if (issuerCN.includes('Platform')) {
@@ -79,12 +89,18 @@ class X509 {
         let sgx_ext_values = asn1.value;
         for (let i = 0; i < sgx_ext_values.length; i++) {
           let obj = sgx_ext_values[i];
-          if (
-            obj.value[0].tag == TAG_OID &&
-            obj.value[0].value === SGX_EXTENSIONS_FMSPC_OID
-          ) {
-            this.fmspc = obj.value[1].value.toString('hex');
-            break;
+          if (obj.value[0].tag !== TAG_OID) {
+            continue;
+          }
+          if (obj.value[0].value === SGX_EXTENSIONS_FMSPC_OID) {
+            this.fmspc = obj.value[1].value.toString('hex').toUpperCase();
+          } else if (obj.value[0].value === SGX_EXTENSIONS_PCEID_OID) {
+            this.pceId = obj.value[1].value.toString('hex').toUpperCase();
+          } else if (obj.value[0].value === SGX_EXTENSIONS_PPID_OID) {
+            this.ppid = obj.value[1].value.toString('hex').toUpperCase();
+          } else if (obj.value[0].value === SGX_EXTENSIONS_TCB_OID) {
+            this.cpusvn = obj.value[1].value[17].value[1].value.toString('hex').toUpperCase();
+            this.pcesvn = obj.value[1].value[16].value[1].value; //int value
           }
         }
       }

@@ -41,12 +41,6 @@ ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 # Clone the specific branch or tag 
 RUN git clone --recurse-submodules https://github.com/intel/SGXDataCenterAttestationPrimitives.git -b ${DCAP_VERSION} --depth 1
 
-# Build libPCKCertSelection library
-WORKDIR /SGXDataCenterAttestationPrimitives/tools/PCKCertSelection/
-RUN make \
-    && mkdir -p ../../QuoteGeneration/pccs/lib \
-    && cp ./out/libPCKCertSelection.so ../../QuoteGeneration/pccs/lib/ \
-    && make clean
 
 # Build PCCS
 WORKDIR /SGXDataCenterAttestationPrimitives/QuoteGeneration/pccs/
