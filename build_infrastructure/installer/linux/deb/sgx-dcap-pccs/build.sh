@@ -101,6 +101,7 @@ update_version() {
 
     FULL_VERSION=${PCCS_VERSION}-$(get_os_code)${DEB_VERSION}
     sed -i "s#${INS_VERSION}#${FULL_VERSION}#" debian/changelog
+    sed -i "s/@dep_version@/${FULL_VERSION}/g" debian/control
     popd
 }
 

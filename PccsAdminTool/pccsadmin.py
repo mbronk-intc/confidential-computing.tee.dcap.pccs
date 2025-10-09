@@ -4,13 +4,15 @@
 import argparse
 import requests
 import os
+import sys
 import json
 from lib.intelsgx.credential import Credentials
 
 PCCS_SERVICE_URL = 'https://localhost:8081/sgx/certification/v4'
 
 def main():
-    parser = argparse.ArgumentParser(description="Administrator tool for PCCS")
+    prog = os.environ.get("PCCS_ADMIN_TOOL_EXECUTABLE_WRAPPER", os.path.basename(os.path.realpath(sys.argv[0])))
+    parser = argparse.ArgumentParser(description="Administrator tool for PCCS", prog=prog)
     #parser.add_argument('action', help='Choose your action')
     subparsers = parser.add_subparsers(dest="command")
 
@@ -233,4 +235,5 @@ def pccs_refresh(args):
     client = PccsClient(credentials, args)
     client.refresh_cache_database()
 
-main()
+if __name__ == "__main__":
+    main()

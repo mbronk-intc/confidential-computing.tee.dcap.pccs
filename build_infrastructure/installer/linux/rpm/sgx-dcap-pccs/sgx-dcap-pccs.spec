@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2025 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -38,6 +38,12 @@ Release:        1%{?dist}
 Summary:        Intel(R) Software Guard Extensions PCK Caching Service
 Group:          Applications/Internet
 Requires:       gcc gcc-c++ make
+
+# intel-tee-pccs-admin-tool is a recommended dependency (especially for managing pccs in REQ and OFFLINE modes).
+#   While, in some deployments, it is installed on a different host from the PCCS system itself, it is considered
+#   a weak dependency due to the practicality of having it also available on the localhost.
+#   Note the reverse is not true: PCCS package is merely a *hint* for intel-tee-pccs-admin-tool.
+Recommends:     intel-tee-pccs-admin-tool >= %{version}-%{release}
 
 License:        BSD License
 URL:            https://github.com/intel/SGXDataCenterAttestationPrimitives

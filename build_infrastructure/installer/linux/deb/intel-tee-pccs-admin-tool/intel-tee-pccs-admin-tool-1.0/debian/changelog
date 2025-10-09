@@ -1,0 +1,6 @@
+intel-tee-pccs-admin-tool (1.0-1) unstable; urgency=low
+
+  * Initial packaged release of pccsadmin.py. 
+    Follows the former pccsadmin.py (multi-purpose) tool's split into (PCCS-scoped)pccsadmin.py and pcsclient.py
+
+ -- Intel Confidential Computing Team <confidential.computing@intel.com> Wed, 01 Oct 2025 13:01:21 +0100
