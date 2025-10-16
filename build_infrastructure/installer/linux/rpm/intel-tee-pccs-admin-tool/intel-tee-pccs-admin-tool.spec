@@ -175,6 +175,6 @@ fi
 
 
 %changelog
-* Wed Oct 01 2025 Intel Confidential Computing Team <confidential.computing@intel.com> - @version@
+* @date@ Intel Confidential Computing Team <confidential.computing@intel.com> - @version@
 - Initial Release of a RPM packaged version of the pccsadmin.py
   Follows the former pccsadmin.py (multi-purpose) tool's split into (PCCS-scoped)pccsadmin.py and pcsclient.py
