@@ -15,7 +15,7 @@ function version_ge() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$
 function checkDependencies() {
     echo "Checking nodejs version ..."
     expected_node_v="v18.17.0"
-    if which node > /dev/null
+    if command -v node > /dev/null 2>&1
     then
         cur_node_v=$(node -v)
         if version_ge $cur_node_v $expected_node_v; then
@@ -30,7 +30,7 @@ function checkDependencies() {
     fi
 
     echo "Checking cracklib-runtime ..."
-    if ! which cracklib-check > /dev/null
+    if ! command -v cracklib-check >/dev/null 2>&1
     then
         echo -e "${RED}cracklib-runtime not installed. Please install cracklib-runtime first and then retry. ${NC} "
         exit 1
@@ -260,7 +260,7 @@ do
     fi
 done
 
-if which openssl > /dev/null 
+if command -v openssl > /dev/null 2>&1
 then 
     genkey=""
     while [ "$genkey" == "" ]
@@ -272,7 +272,8 @@ then
                 mkdir ssl_key
             fi
             openssl genrsa -out ssl_key/private.pem 2048
-            openssl req -new -key ssl_key/private.pem -out ssl_key/csr.pem
+            # Since this is an insecure self-signed certificate, the common name (CN)/subject customization does not play a role.
+            openssl req -new -key ssl_key/private.pem -out ssl_key/csr.pem -subj "/CN=PCCS Server (self-signed certificate)"            
             openssl x509 -req -days 365 -in ssl_key/csr.pem -signkey ssl_key/private.pem -out ssl_key/file.crt
             break
         elif [[ "$genkey" == "N" || "$genkey" == "n" ]] 

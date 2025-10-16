@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2025 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -38,6 +38,34 @@ if test $(id -u) -ne 0; then
     exit 1
 fi
 
+get_manual_command() {
+    # Generate a command to run a command as a specific user (accounting for availability of 'su' or 'sudo')
+    local cmd="$1"
+    local user="${2:-$PCCS_USER}"
+    if [ -x /bin/su ]; then
+        echo "/bin/su - ${user} -c '${cmd}'"
+    else
+        echo "sudo -u ${user} bash -c \"${cmd}\""
+    fi
+}
+
+# Check if terminal supports colors
+if [ -t 1 ] && tput colors &>/dev/null; then
+    YELLOW='\033[1;33m'
+    RED='\033[1;31m'
+    CYAN='\033[1;36m'
+    GRAY='\033[1;30m'
+    MAGENTA='\033[1;35m'
+    RESET='\033[0m'
+else
+    YELLOW=''
+    RED=''
+    CYAN=''
+    GRAY=''
+    MAGENTA=''
+    RESET=''
+fi
+
 PCCS_USER=pccs
 PCCS_HOME=$(readlink -m $(dirname "$0"))
 if [ "$1" == "debian" ]; then
@@ -47,7 +75,11 @@ else
         groupadd $PCCS_USER
     fi
     if ! id "$PCCS_USER" &>/dev/null; then
-        adduser --system $PCCS_USER -g $PCCS_USER --home $PCCS_HOME --no-create-home --shell /bin/bash
+        if command -v adduser &>/dev/null; then
+            adduser --system $PCCS_USER -g $PCCS_USER --home $PCCS_HOME --no-create-home --shell /bin/bash
+        else
+            useradd -r -g $PCCS_USER -d $PCCS_HOME -s /bin/bash $PCCS_USER
+        fi
     fi
 fi
 chown -R $PCCS_USER:$PCCS_USER $PCCS_HOME
@@ -55,6 +87,18 @@ chmod 640 $PCCS_HOME/config/default.json
 if [ "$1" == "debian" -a "${DEBIAN_FRONTEND}" != "noninteractive" ]
 then
     /bin/su -c "$PCCS_HOME/install.sh" $PCCS_USER
+else
+    echo -e "$(cat <<EOF
+
+${YELLOW}┌───────────────────────────────────────────────────────────────────────────────┐
+│  ${RED}WARNING:${YELLOW} Non-interactive installation!                                       │
+│           PCCS post-install configuration has been SKIPPED.                   │
+└───────────────────────────────────────────────────────────────────────────────┘${RESET}
+┋ You need to configure the service manually before 1st startup. For example, by running: 
+┋    ${CYAN}$(get_manual_command "$PCCS_HOME/install.sh")${RESET}
+┋
+EOF
+    )"
 fi
 #Install PCCS as system service
 echo -n "Installing PCCS service ..."
@@ -68,8 +112,23 @@ elif [ -d /etc/init/ ]; then
     /sbin/initctl reload-configuration
 else
     echo " failed."
-    echo "Unsupported platform - neither systemctl nor initctl was found."
-    exit 5
+    if grep -qE 'docker|lxc' /proc/1/cgroup; then
+        echo -e "$(cat <<EOF
+
+${GRAY}┌───────────────────────────────────────────────────────────────────────────────┐
+│  ${MAGENTA}NOTICE:${GRAY} Running inside a container (without systemd or init).                │
+│          PCCS service (daemon) startup has been SKIPPED.                      │
+└───────────────────────────────────────────────────────────────────────────────┘${RESET}
+┋ You can start PCCS manually by running: 
+┋    ${CYAN}$(get_manual_command "cd ${PCCS_HOME} && /usr/bin/node ./pccs_server.js")${RESET}
+┋
+EOF
+        )"
+    else
+        # Non-Docker host without systemd or upstart (e.g., older Debian/Ubuntu - bail out)
+        echo "Unsupported platform - neither systemctl nor initctl was found."
+        exit 5
+    fi    
 fi
 echo "finished."
 echo "Installation completed successfully."

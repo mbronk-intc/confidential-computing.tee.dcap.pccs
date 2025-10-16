@@ -14,6 +14,14 @@ rpm: rpm_sgx_dcap_pccs_pkg rpm_pccs_admin_tool_pkg
 all: deb rpm
 
 
+.PHONY: default deb rpm all
+default: all
+
+deb: deb_sgx_dcap_pccs_pkg
+rpm: rpm_sgx_dcap_pccs_pkg
+all: deb rpm
+
+
 .PHONY: deb_sgx_dcap_pccs_pkg
 deb_sgx_dcap_pccs_pkg:
 	./build_infrastructure/installer/linux/deb/sgx-dcap-pccs/build.sh $(PCCS_VERSION)

@@ -37,7 +37,22 @@ Version:        @version@
 Release:        1%{?dist}
 Summary:        Intel(R) Software Guard Extensions PCK Caching Service
 Group:          Applications/Internet
-Requires:       gcc gcc-c++ make
+
+# Note: NodeJS version constraint is deliberately lax, to allow for forward-compat
+#       As of time of this writing, the Intel_SGX_SW_Installation_Guide_for_Linux.pdf declares support for: (18.17.0 to 18.19.1, 20.0.0 to 20.11.1, or 21.0.0 to 21.5.0)
+Requires:       nodejs >= 18.17.0, npm, cracklib
+%if 0%{?sle_version} == 0
+# On OpenSUSE cracklib comes with `cracklib-dict` as a required dep (and `cracklib-dict` is n/a). On other systems, it needs to be installed separate.
+Requires:       cracklib-dicts
+# 'startup.sh' is using 'adduser', which is provided by the shadow-utils package
+Requires:       shadow-utils
+%else
+# OpenSUSE has 'shadow' package instead of 'shadow-utils' (also no adduser by default, so the script falls back to useradd)
+Requires:       shadow
+%endif
+
+# If openssl is present, it allows to auto-generate self-signed TLS certificates for HTTPS support at install-time
+Recommends:     openssl
 
 # intel-tee-pccs-admin-tool is a recommended dependency (especially for managing pccs in REQ and OFFLINE modes).
 #   While, in some deployments, it is installed on a different host from the PCCS system itself, it is considered
@@ -46,7 +61,7 @@ Requires:       gcc gcc-c++ make
 Recommends:     intel-tee-pccs-admin-tool >= %{version}-%{release}
 
 License:        BSD License
-URL:            https://github.com/intel/SGXDataCenterAttestationPrimitives
+URL:            https://github.com/intel/confidential-computing.tee.dcap.pccs
 Source0:        %{name}-%{version}.tar.gz
 
 %description
