@@ -76,8 +76,67 @@ npm config set proxy $http_proxy
 npm config set https-proxy $https_proxy
 npm config set engine-strict true
 npm install
-npm audit fix
-[ $? -eq 0 ] || exit $?;
+NPM_INSTALL_RESULT=$?
+if [[ $NPM_INSTALL_RESULT -ne 0 ]]
+then
+    exit $NPM_INSTALL_RESULT
+fi
+
+npm audit
+NPM_AUDIT_RESULT=$?
+if [[ $NPM_AUDIT_RESULT -ne 0 ]]
+then
+    while :
+    do
+        if [ -t 0 ] # Ask questions only when terminal is interactive
+        then
+            echo ""
+            echo "There are some known vulnerabilities in the dependencies of this package."
+            echo "Select one of the options to proceed:"
+            echo "  1. Continue the installation with tested versions of dependencies accepting their known vulnerabilities."
+            echo "  2. Run 'npm audit fix' to automatically update vulnerable dependencies to latest compatible versions."
+            echo "  3. Run 'npm audit fix --force' to automatically update vulnerable dependencies ignoring compatibility checks. This may break installed service."
+            echo "  4. Abort the installation and wait for a future release of dependencies with resolved vulnerabilities."
+            read -p "Choose an option? (1-4) :" option
+            case $option in
+                1)
+                    break ;;
+                2)
+                    echo "Running 'npm audit fix'"
+                    npm audit fix
+                    NPM_AUDIT_FIX_RESULT=$?
+                    if [[ $NPM_AUDIT_FIX_RESULT -eq 0 ]]
+                    then
+                        break
+                    else
+                        echo ""
+                        echo "Some vulnerabilities could not be fixed automatically."
+                    fi ;;
+                3)
+                    echo "Running 'npm audit fix --force'"
+                    npm audit fix --force
+                    NPM_AUDIT_FIX_FORCE_RESULT=$?
+                    if [[ $NPM_AUDIT_FIX_FORCE_RESULT -eq 0 ]]
+                    then
+                        break
+                    else
+                        echo ""
+                        echo "Some vulnerabilities could not be fixed automatically."
+                    fi ;;
+                4)
+                    exit 1 ;;
+                *)
+                    echo ""
+                    echo "Select number between 1 and 4." ;;
+            esac
+        else # non-interactive terminal
+            echo "Non-interactive terminal detected."
+            echo "User intervention is necessary to proceed."
+            exit 1
+        fi
+    done
+fi
+
 
 doconfig=""
 while [ "$doconfig" == "" ]
