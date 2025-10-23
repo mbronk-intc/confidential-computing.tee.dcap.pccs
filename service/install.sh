@@ -38,21 +38,23 @@ function checkDependencies() {
 }
 
 function promptDbMigration() {
-    auto_update_db=""
     echo -e "${YELLOW}Warning: If you are upgrading PCCS from an old release, the existing cache database will be updated automatically. ${NC} "
     echo -e "${YELLOW}         It's strongly recommended to backup your existing cache database first and then continue the installation. ${NC} "
     echo -e "${YELLOW}         For DCAP releases 1.8 and earlier, the cache database can't be updated so you need to delete it manually. ${NC} "
-    while [ "$auto_update_db" == "" ]
+    while :
     do
-        read -p "Do you want to install PCCS now? (Y/N) :" auto_update_db 
-        if [[ "$auto_update_db" == "Y" || "$auto_update_db" == "y" ]] 
+        read -p "Do you want to install PCCS now? (Y/N) :" auto_update_db
+        if [[ "$auto_update_db" == "Y" || "$auto_update_db" == "y" ]]
         then
             break
-        elif [[ "$auto_update_db" == "N" || "$auto_update_db" == "n" ]] 
+        elif [[ "$auto_update_db" == "N" || "$auto_update_db" == "n" ]]
         then
             exit 1
-        else
-            auto_update_db=""
+        elif [ ! -t 0 ] # non-interactive terminal
+        then
+            echo "Non-interactive terminal detected."
+            echo "User intervention is necessary to proceed."
+            exit 1
         fi
     done
 }
@@ -88,7 +90,7 @@ if [[ $NPM_AUDIT_RESULT -ne 0 ]]
 then
     while :
     do
-        if [ -t 0 ] # Ask questions only when terminal is interactive
+        if [ -t 0 ]; # Ask questions only when terminal is interactive
         then
             echo ""
             echo "There are some known vulnerabilities in the dependencies of this package."
@@ -138,8 +140,7 @@ then
 fi
 
 
-doconfig=""
-while [ "$doconfig" == "" ]
+while :
 do
     read -p "Do you want to configure PCCS now? (Y/N) :" doconfig 
     if [[ "$doconfig" == "Y" || "$doconfig" == "y" ]] 
@@ -148,13 +149,15 @@ do
     elif [[ "$doconfig" == "N" || "$doconfig" == "n" ]] 
     then
         exit 0
-    else
-        doconfig=""
+    elif [ ! -t 0 ] # non-interactive terminal
+    then
+        echo "Non-interactive terminal detected."
+        echo "User intervention is necessary to proceed."
+        exit 1
     fi
 done
 
 #Ask for HTTPS port number
-port=""
 while :
 do
     read -p "Set HTTPS listening port [8081] (1024-65535) :" port
@@ -169,25 +172,23 @@ do
     fi
 done
 
-#Ask for HTTPS port number
-local_only=""
-while [ "$local_only" == "" ]
+#Ask whether service should be available locally or externally
+while :
 do
     read -p "Set the PCCS service to accept local connections only? [Y] (Y/N) :" local_only 
     if [[ -z $local_only  || "$local_only" == "Y" || "$local_only" == "y" ]] 
     then
         local_only="Y"
         sed "/\"hosts\"*/c\ \ \ \ \"hosts\" \: \"127.0.0.1\"," -i ${configFile}
+        break
     elif [[ "$local_only" == "N" || "$local_only" == "n" ]] 
     then
         sed "/\"hosts\"*/c\ \ \ \ \"hosts\" \: \"0.0.0.0\"," -i ${configFile}
-    else
-        local_only=""
+        break
     fi
 done
 
 #Ask for API key 
-apikey=""
 while :
 do
     read -p "Set your Intel PCS API key (Press ENTER to skip) :" apikey 
@@ -209,19 +210,18 @@ then
 fi
 
 #Ask for CachingFillMode
-caching_mode=""
-while [ "$caching_mode" == "" ]
+while :
 do
     read -p "Choose caching fill method : [LAZY] (LAZY/OFFLINE/REQ) :" caching_mode 
     if [[ -z $caching_mode  || "$caching_mode" == "LAZY" ]] 
     then
         caching_mode="LAZY"
         sed "/\"CachingFillMode\"*/c\ \ \ \ \"CachingFillMode\" \: \"${caching_mode}\"," -i ${configFile}
+        break
     elif [[ "$caching_mode" == "OFFLINE" || "$caching_mode" == "REQ" ]] 
     then
         sed "/\"CachingFillMode\"*/c\ \ \ \ \"CachingFillMode\" \: \"${caching_mode}\"," -i ${configFile}
-    else
-        caching_mode=""
+        break
     fi
 done
 
@@ -236,6 +236,12 @@ do
     do
         read -s -p "Set PCCS server administrator password:" admintoken1
         printf "\n"
+        if [ ! -t 0 ] # non-interactive terminal
+        then
+            echo "Non-interactive terminal detected."
+            echo "User intervention is necessary to proceed."
+            exit 1
+        fi
     done
     
     # check password strength
@@ -257,6 +263,12 @@ do
     do
         read -s -p "Re-enter administrator password:" admintoken2
         printf "\n"
+        if [ ! -t 0 ] # non-interactive terminal
+        then
+            echo "Non-interactive terminal detected."
+            echo "User intervention is necessary to proceed."
+            exit 1
+        fi
     done
 
     if test "$admintoken1" != "$admintoken2"
@@ -283,6 +295,12 @@ do
     do
         read -s -p "Set PCCS server user password:" usertoken1
         printf "\n"
+        if [ ! -t 0 ] # non-interactive terminal
+        then
+            echo "Non-interactive terminal detected."
+            echo "User intervention is necessary to proceed."
+            exit 1
+        fi
     done
 
     # check password strength
@@ -304,6 +322,12 @@ do
     do
         read -s -p "Re-enter user password:" usertoken2
         printf "\n"
+        if [ ! -t 0 ] # non-interactive terminal
+        then
+            echo "Non-interactive terminal detected."
+            echo "User intervention is necessary to proceed."
+            exit 1
+        fi
     done
 
     if test "$usertoken1" != "$usertoken2"
