@@ -1,136 +1,229 @@
-## Provisioning Certificate Caching Service (PCCS)
+# Provisioning Certificate Caching Service (PCCS)
 
-This is a lightweight Provisioning Certificate Caching Service implemented in nodejs for reference. It retrieves PCK Certificates and other collaterals on-demand using the internet at runtime, and then caches them in local database. The PCCS exposes similar HTTPS interfaces as Intel's Provisioning Certificate Service.
+# Table of Contents
 
-## <h3>How to install</h3>
+- [Introduction](#introduction)
+- [How to install](#how-to-install)
+    - [Prerequisites](#prerequisites)
+    - [Install via Linux Debian package installer](#install-via-linux-debian-package-installer)
+    - [Install via RPM package installer](#install-via-rpm-package-installer)
+    - [Linux manual installation](#linux-manual-installation)
+    - [Windows manual installation](#windows-manual-installation)
+- [Configuration file (`config/default.json`)](#configuration-file-configdefaultjson)
+- [Caching Fill Mode](#caching-fill-mode)
+    - [LAZY mode](#lazy-mode)
+    - [REQ mode](#req-mode)
+    - [OFFLINE mode](#offline-mode)
+- [Local service vs. Remote service](#local-service-vs-remote-service)
+- [Manage the PCCS service](#manage-the-pccs-service)
+- [Uninstall](#uninstall)
+- [Further reading](#further-reading)
 
-- **Prerequisites**
+## Introduction
 
-  Install node.js (Supported versions are 18.17.0 and later)
+This is a lightweight Provisioning Certificate Caching Service implemented in Node.js for reference.
+It retrieves PCK Certificates and other collaterals on-demand using the internet at runtime, and then caches them in local database.
+The PCCS exposes similar HTTPS interfaces as [Intel® SGX and Intel® TDX Provisioning Certification Service](https://api.portal.trustedservices.intel.com/content/documentation.html#pcs).
 
-  - For Debian and Ubuntu based distributions, please refer to https://github.com/nodesource/distributions
-  - To download and install, goto https://nodejs.org/en/download/
+## How to install
 
-  Install dependencies (python3, cracklib-runtime) if they are not installed. Also make sure "python" is linked to "python3"
+> [!NOTE]
+> You may also want to refer to our [enabling documentation](https://cc-enabling.trustedservices.intel.com/intel-tdx-enabling-guide/02/infrastructure_setup/#provisioning-certificate-caching-service-pccs) for a streamlined installation instruction.
 
-  $ sudo apt-get install python3 cracklib-runtime
 
-- **Install via Linux Debian package installer**
+### Prerequisites
 
-  $ dpkg -i sgx-dcap-pccs*${version}-${os}*\${arch}.deb
+Install Node.js (Supported versions are `18.17.0` and later)
 
-  All configurations can be set during the installation process.
+- For Debian and Ubuntu based distributions, please refer to https://github.com/nodesource/distributions
+- To download and install, go to https://nodejs.org/en/download/
 
-  _**NOTE** : If you have installed old libsgx-dcap-pccs releases with root privilege before, some folders may remain even after you uninstall it.
-  You can delete them manually with root privilege, for example, ~/.npm/, etc._
+### Install via Linux Debian package installer
 
-- **Install via RPM package installer**
+  ``` bash
+  # If you have the package repository set-up
+  sudo apt install sgx-dcap-pccs
 
-  $ rpm -ivh sgx-dcap-pccs*\${version}*\${arch}.rpm
+  # Alternatively, if you have built from source or downloaded the package manually
+  sudo apt install sgx-dcap-pccs*${version}-${os}*.deb
+  ```
 
-  After the RPM package was installed, goto the root directory of the PCCS(/opt/intel/sgx-dcap-pccs/) and run install.sh with account 'pccs':
-  $ sudo -u pccs ./install.sh
+You will be prompted for configuration settings during the installation process.
+If you would like to bypass the prompts and configure the PCCS at a later stage, make sure to set `DEBIAN_FRONTEND=noninteractive` before invoking `apt`.
+You'll need to then call `/opt/intel/sgx-dcap-pccs/startup.sh debian` manually to finish up the interactive configuration, or manually edit the relevant configuration files.
 
-- **Linux manual installation**
+> [!NOTE]
+> If you have installed old `libsgx-dcap-pccs` releases with root privilege before, some folders may remain even after you uninstall it.  
+> You can delete them manually with root privilege, for example, `~/.npm/`, etc.
 
-  1. Put all the files and sub folders in this directory to your preferred place with right permissions set to launch a web service.
-  2. Install dependencies if they are not already installed. Also make sure "python" is linked to "python3"<br/>
-     nodejs build-essential(gcc gcc-c++ make) python3 cracklib-runtime
-  3. From the root directory of your installation folder, run ./install.sh
+### Install via RPM package installer
 
-- **Windows manual installation**
+  ``` bash
+  # If you have the package repository set-up
+  sudo dnf install sgx-dcap-pccs
 
-  1. Put all the files and sub folders in this directory to your preferred place with right permissions set to launch a web service.
-  2. (Optional) If the target machine connects to internet through a proxy server, configure proxy server first
-     before continuing. <br/>
-     npm config set http-proxy http://your-proxy-server:port <br/>
-     npm config set https-proxy http://your-proxy-server:port <br/>
-     npm config set proxy http://your-proxy-server:port
+  # Alternatively, if you have built from source or downloaded the package manually
+  sudo dnf install sgx-dcap-pccs*${version}-${os}*.rpm
+  ```
 
-  3. Update config file based on your environment, see section [Configuration file](#Configuration)
+After the RPM package was installed, go to the root directory of the PCCS (`/opt/intel/sgx-dcap-pccs/`) and run `install.sh` with account `pccs`:
+   ``` bash
+   sudo -u pccs ./install.sh
+   ```
 
-  4. Private key and public certificate
-     The PCCS requires a private key and certificate pair to run as HTTPS server. For production environment
-     you should use formally issued key and certificate. Please put the key files in ssl_key sub directory.
-     You can also genarate an insecure key and certificate pair with following commands: (only for debug purpose)
-     openssl genrsa -out private.pem 2048
-     openssl req -new -key private.pem -out csr.pem
-     openssl x509 -req -days 365 -in csr.pem -signkey private.pem -out file.crt
+### Linux manual installation
 
-  5. Install python if it's not already installed
+1. Put all the files and sub folders in this directory to your preferred place with right permissions set to launch a web service.
+2. Install dependencies if they are not already installed.  
+   ```
+   sudo apt install nodejs cracklib-runtime
+   ```
 
-  6. From the root directory of your installation folder, run install.bat with administrator privilege
-     This will install the required npm packages and install the Window service.
+3. From the root directory of your installation folder, run `./install.sh`.
 
-  _**NOTE** : If a self-signed insecure key and certificate are used, you need to set USE_SECURE_CERT=FALSE when
-  configuring the default QPL library (see ../../qpl/README.md)_
+### Windows manual installation
 
-## <h3 id="Configuration">Configuration file (config/default.json) </h3>
+1. Put all the files and sub folders in this directory to your preferred place with right permissions set to launch a web service.
+2. (Optional) If the target machine connects to internet through a proxy server, configure proxy server first
+   before continuing. 
+   ``` batch
+   npm config set http-proxy http://your-proxy-server:port
+   npm config set https-proxy http://your-proxy-server:port
+   npm config set proxy http://your-proxy-server:port
+   ```
 
-- **HTTPS_PORT** - The port you want the PCCS to listen on. The default listening port is 8081.
-- **hosts** - The hosts that will be accepted for connections. Default is localhost only. To accept all connections use 0.0.0.0
-- **uri** - The URL of Intel Provisioning Certificate Service. The default URL is https://api.trustedservices.intel.com/sgx/certification/v4/
-- **ApiKey** - The PCCS uses this API key to request collaterals from Intel's Provisioning Certificate Service. User needs to subscribe first to obtain an API key. For how to subscribe to Intel Provisioning Certificate Service and receive an API key, goto https://api.portal.trustedservices.intel.com/provisioning-certification and click on 'Subscribe'.
-- **proxy** - Specify the proxy server for internet connection, for example, "http://192.168.1.1:80". Leave blank for no proxy or system proxy.
-- **RefreshSchedule** - cron-style refresh schedule for the PCCS to refresh cached artifacts including CRL/TCB Info/QE Identity/QVE Identity.
-  The default setting is "0 0 1 \* \* \*", which means refresh at 1:00 AM every day.
-- **UserTokenHash** - Sha512 hash of the user token for the PCCS client user to register a platform. For example, PCK Cert ID retrieval tool will use the user token to send platform information to PCCS.
-- **AdminTokenHash** - Sha512 hash of the administrator token for the PCCS administrator to perform a manual refresh of cached artifacts.
+3. Update config file based on your environment, see section [Configuration file](#configuration-file-configdefaultjson).
 
-  _**NOTE** : For Windows you need to set the UserTokenHash and AdminTokenHash manually. You can calculate SHA512 hash with the help of openssl:_
+4. Private key and public certificate
 
-      <nul: set /p password="mytoken" | openssl dgst -sha512
+   The PCCS requires a private key and certificate pair to run as HTTPS server.
+   For production environment you should use formally issued key and certificate.
+   Please put the key files in `ssl_key` subdirectory.
 
-- **CachingFillMode** - The method used to fill the cache DB. Can be one of the following: LAZY/REQ/OFFLINE. For more details see section [Caching Fill Mode](#CachingMode).
-- **LogLevel** - Log level. Use the same levels as npm: error, warn, info, http, verbose, debug, silly. Default is info.
-- **DB_CONFIG** - You can choose sqlite or mysql and many other DBMSes. For sqlite, you don't need to change anything. For other DBMSes, you need to set database connection options correctly. Normally you need to change database, username, password, host and dialect to connect to your DBMS.
-  <br/>
-  _**NOTE** : It's recommended to delete the cache database first if you have installed a version older than 1.9 because the database is not compatible._
+   You can also generate an insecure key and certificate pair with following commands (only for debug purpose):
 
-## <h3 id="CachingMode">Caching Fill Mode</h3>
+   ``` batch
+   openssl genrsa -out private.pem 2048
+   openssl req -new -key private.pem -out csr.pem
+   openssl x509 -req -days 365 -in csr.pem -signkey private.pem -out file.crt
+   ```
 
-When a new server platform is introduced to the data center or the cloud service provider that will require SGX remote attestation, the caching service will need to import the platform’s SGX attestation collateral retrieved from Intel. This collateral will be used for both generating and verifying ECDSA quotes. Currently PCCS supports three caching fill methods.
+5. From the root directory of your installation folder, run `install.bat` with administrator privilege
+   This will install the required npm packages and install the Windows service.
 
-- **LAZY** mode <br/>
-  In this mode, when the caching service gets a retrieval request(PCK Cert, TCB, etc.) at runtime, it will look for the collaterals in its database to see if they are already in the cache. If they don't exist, it will contact the Intel PCS to retrieve the collaterals. This mode only works when internet connection is available.
+> [!NOTE]
+> If a self-signed insecure key and certificate are used, you need to set `"use_secure_cert": false` when
+configuring the default QPL library (see [QPL README](https://github.com/intel/SGXDataCenterAttestationPrimitives/blob/main/QuoteGeneration/qpl/README.md)).
 
-- **REQ** mode <br/>
-  In this method of filling the cache, the caching service will create a platform database entry when the caching service receives the registration requests. It will not return any data to the caller, but will contact the Intel PCS to retrieve the platform's collaterals if they are not in the cache. It will save the retrived collaterals in cache database for later use. This mode requires internet connection at deployment time. During runtime the caching service will use cache data only and will not contact Intel PCS.
+## Configuration file *([`config/default.json`](./config/default.json))*
 
-- **OFFLINE** mode <br/>
-  In this method of filling the cache, the caching service will not have access to the Intel hosted PCS service on the internet. It will create a platform database entry to save platform registration information sent by PCK Cert ID retrieval tool. It will provide an interface to allow an administration tool to retrieve the contents of the registration queue. The administrator tool will run on a platform that does have access to the internet. It can fetch platform collaterals from Intel PCS and send them to the caching service. The tool can be found at [PccsAdminTool](https://github.com/intel/confidential-computing.tee.dcap.pccs/tree/main/PccsAdminTool)
+- **`HTTPS_PORT`** - The port you want the PCCS to listen on. The default listening port is `8081`.
+- **`hosts`** - The hosts that will be accepted for connections. Default is localhost only. To accept all connections use `0.0.0.0`
+- **`uri`** - The URL of Intel Provisioning Certificate Service. The default URL is `https://api.trustedservices.intel.com/sgx/certification/v4/`
+- **`ApiKey`** - The PCCS uses this API key to request collaterals from Intel® SGX and Intel® TDX Provisioning Certification Service (Intel PCS).  
+  User needs to subscribe first to obtain an API key.  
+  For how to subscribe to Intel PCS and receive an API key, goto https://api.portal.trustedservices.intel.com/provisioning-certification and click on [_Subscribe_](https://api.portal.trustedservices.intel.com/products#product=liv-intel-software-guard-extensions-provisioning-certification-service).
+- **`proxy`** - Specify the proxy server for internet connection, for example, `"http://192.168.1.1:80"`. Leave blank for no proxy or system proxy.
+- **`RefreshSchedule`** - cron-style refresh schedule for the PCCS to refresh cached artifacts including CRL/TCB Info/QE Identity/QVE Identity.
+  The default setting is `"0 0 1 * * *"`, which means refresh at 1:00 AM every day.
+- **`UserTokenHash`** - Sha512 hash of the user token for the PCCS client user to register a platform. For example, PCK Cert ID retrieval tool will use the user token to send platform information to the PCCS.
+- **`AdminTokenHash`** - Sha512 hash of the administrator token for the PCCS administrator to perform a manual refresh of cached artifacts.
 
-## <h3>Local service vs Remote service</h3>
+> [!NOTE]
+> For Windows you need to set the UserTokenHash and AdminTokenHash manually. For example, you can calculate SHA512 hash using the following PowerShell snippet:
 
-You can run PCCS on localhost for product development or setup it as a public remote service in datacenter.
-Typical setup flow for Local Service mode (Ubuntu 22.04 as example):
+  ``` powershell
+  [BitConverter]::ToString(
+    [System.Security.Cryptography.SHA512]::Create().ComputeHash(
+        [System.Text.Encoding]::UTF8.GetBytes((Read-Host "Type the secret token (password) to hash"))
+    )
+  ).Replace('-', '').ToLower()
+  ```
 
-    1) Install Node.js via package manager (version 18.17 or later from official Node.js site)
-    2) Request an API key from Intel's Provisioning Certificate Service
-    3) Install PCCS through Debian package
+- **`CachingFillMode`** - The method used to fill the cache DB. Can be one of the following: `LAZY`/`REQ`/`OFFLINE`. For more details see the section [Caching Fill Mode](#caching-fill-mode).
+- **`LogLevel`** - Log level. Use the same levels as npm: `error`, `warn`, `info`, `http`, `verbose`, `debug`, `silly`. Default is `info`.
+- **`DB_CONFIG`** - You can choose `sqlite` or `mysql` and many other DBMSes. For `sqlite`, you don't need to change anything. For other DBMSes, you need to set database connection options correctly. Normally you need to change database, username, password, host and dialect to connect to your DBMS.  
+> [!NOTE]
+> It's recommended to delete the cache database first if you have installed a version older than 1.9 because the database is not compatible.
 
-You can test PCCS by running QuoteGeneration sample:
+## Caching Fill Mode
 
-    1) Set "use_secure_cert": false in /etc/sgx_default_qcnl.conf
-    2) Build and run QuoteGeneration sample and verify CertType=5 quote is generated
+When a new server platform is introduced to the data center or the cloud service provider that will require SGX remote attestation, the caching service will need to import the platform’s SGX attestation collateral retrieved from Intel.
+This collateral will be used for both generating and verifying ECDSA quotes.
+Currently, the PCCS supports three caching fill methods:
 
-For Remote service mode, you must use a formal key and certificate pair. You should also change 'hosts' to 0.0.0.0 to accept remote connections. Also make sure the firewall is not blocking your listening port.
-In /etc/sgx_default_qcnl.conf, set "use_secure_cert": true (For Windows see ../../qpl/README.md)
+### `LAZY` mode
+In this method of filling the cache, when the PCCS gets a retrieval request (PCK Cert, TCB etc.) at runtime, it looks for the collaterals in its database to see if they are already in the cache.  
+If they do not exist, it will contact the Intel PCS to retrieve the collaterals.  
+> [!NOTE]
+> This mode only works when internet connection is available.
 
-## <h3>Manage the PCCS service</h3>
+### `REQ` mode
+In this method of filling the cache, the PCCS creates a platform database entry when the PCCS receives the platform registration requests during platform deployment/provisioning.  
+The PCCS does not return any data to the caller but contacts the Intel PCS to retrieve the platform's collaterals if they are not in its cache.  
+The PCCS saves the retrieved collateral in cache database for use during runtime.  
+> [!NOTE]
+> This mode requires the PCCS to have an Internet connection at deployment/provisioning time.  
+> During runtime, the PCCS uses cache data only and does not contact Intel PCS.
 
-- If PCCS was installed by Debian package or RPM package
+### `OFFLINE` mode
+In this method of filling the cache, the PCCS creates a platform database entry to save platform registration information sent by the [PCK Cert ID retrieval tool](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/main/tools/PCKRetrievalTool).  
+Later, [PCCS Admin Tool](../PccsAdminTool) can be used on a PCCS-connected host in order to get and save the pending registration request to a JSON file.  
+The file can be then manually transferred to an Internet-connected host with the [PCS Client Tool](https://github.com/intel/SgxDataCenterAttestationPrimitives/tree/main/tools/PcsClientTool) installed. PCS Client tool can fetch the platform collaterals from Intel PCS and save the result to an output file.  
+The file with the collaterals can be then transferred back to a PCCS-connected host and [PCCS Admin Tool](../PccsAdminTool) can be used to upload them to the PCCS.  
+> [!NOTE]
+> In this mode the PCCS does not have access to the Intel PCS on the Internet.
 
-  1. Check status:<br/>
-     $ sudo systemctl status pccs
-  2. Start/Stop/Restart PCCS:<br/>
-     $ sudo systemctl start/stop/restart pccs
+## Local service vs. Remote service
 
-- If PCCS was installed manually by current user, you can start it with the following command <br/>
-  $ node pccs_server.js
+You can run the PCCS on `localhost` for product development or setup it as a public remote service in datacenter.
+Typical setup flow for **Local** Service mode (Ubuntu 22.04 as example):
 
-## <h3>Uninstall</h3>
+1. Install Node.js via package manager (version 18.17 or later from official Node.js site).
+2. Request an API key from Intel's Provisioning Certificate Service.
+3. Install the PCCS through Debian package.
 
-    If the PCCS service was installed through Debian/RPM package, you can use Linux package manager to uninstall it.
-    If the PCCS service was installed manually, you can run below script to uninstall it:
-        ./uninstall.sh (or uninstall.bat with administrator privilege on Windows)
+You can test the PCCS by running QuoteGeneration sample:
+
+1. Set `"use_secure_cert": false` in `/etc/sgx_default_qcnl.conf`.
+2. Build and run [QuoteGeneration sample](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/main/SampleCode/QuoteGenerationSample) and verify `CertType=5` quote is generated.
+
+For **Remote** service mode, you must use a formal key and certificate pair. You should also change `'hosts'` to `0.0.0.0` to accept remote connections. Also make sure the firewall is not blocking your listening port.
+In `/etc/sgx_default_qcnl.conf`, set `"use_secure_cert": true` (For Windows see the OS-specific note of [QPL README](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/main/QuoteGeneration/qpl#configuration)).
+
+## Manage the PCCS service
+
+- If the PCCS was installed by Debian package or RPM package
+
+    1. Check status:
+       ```bash
+       sudo systemctl status pccs
+       ```
+
+    2. Start/Stop/Restart PCCS:
+       ``` bash
+       sudo systemctl start/stop/restart pccs
+       ```
+
+- If the PCCS was installed manually by current user, you can start it with the following command:
+  ``` bash
+  node pccs_server.js
+  ```
+
+## Uninstall
+
+* If the PCCS service was installed through Debian/RPM package, you can use Linux package manager to uninstall it.
+* If the PCCS service was installed manually, you can run below script to uninstall it:
+    * On Linux
+      ```bash
+      ./uninstall.sh
+      ```
+    * On Windows (run with administrator privilege)
+      ```batch
+      uninstall.bat 
+      ```
+
+## Further reading
+
+1. The PCCS Design Guide is available at https://cc-enabling.trustedservices.intel.com/intel-sgx-tdx-pccs.
+2. There's a `Dockerfile` available for running the PCCS as a container. See the [README](container/README.md) in `container` subdirectory.
