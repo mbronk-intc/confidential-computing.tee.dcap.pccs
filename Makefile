@@ -6,21 +6,13 @@
 PCCS_VERSION ?= "9.9.9.9"
 PCCS_ADMIN_TOOL_VERSION ?= $(PCCS_VERSION)
 
-.PHONY: default deb rpm all
+.PHONY: default deb rpm build all
 default: all
 
 deb: deb_sgx_dcap_pccs_pkg deb_pccs_admin_tool_pkg
 rpm: rpm_sgx_dcap_pccs_pkg rpm_pccs_admin_tool_pkg
-all: deb rpm
-
-
-.PHONY: default deb rpm all
-default: all
-
-deb: deb_sgx_dcap_pccs_pkg
-rpm: rpm_sgx_dcap_pccs_pkg
-all: deb rpm
-
+all: build
+build: deb rpm
 
 .PHONY: deb_sgx_dcap_pccs_pkg
 deb_sgx_dcap_pccs_pkg:
