@@ -32,16 +32,16 @@
 import util from "util";
 import _ from "lodash";
 
-import PccsError from '../utils/PccsError.js';
+import { TcbInvalidFormatError, TcbNonComparableError } from '../utils/errors.js';
 
 const CPUSVN_LEN = 16 * 2;
 class Tcb {
     constructor(cpusvn, pcesvn) {
         if (cpusvn.length !== CPUSVN_LEN) {
-            throw new PccsError(util.format('Invalid CPUSVN length: %s, CPUSVN: %s', cpusvn.length, cpusvn));
+            throw new TcbInvalidFormatError(util.format('Invalid CPUSVN length: %s, CPUSVN: %s', cpusvn.length, cpusvn));
         }
         if (!Number.isInteger(pcesvn)) {
-            throw new PccsError(util.format('Invalid PCESVN format - should be a number: %s', pcesvn.toString()));
+            throw new TcbInvalidFormatError(util.format('Invalid PCESVN format - should be a number: %s', pcesvn.toString()));
         }
 
         this.cpusvn = cpusvn;
@@ -73,7 +73,7 @@ class Tcb {
         });
 
         if (leftLower && rightLower) {
-            throw new PccsError(util.format('TCBs are not comparable'));
+            throw new TcbNonComparableError(util.format('TCBs are not comparable'));
         }
         if (leftLower) {
             return -1;

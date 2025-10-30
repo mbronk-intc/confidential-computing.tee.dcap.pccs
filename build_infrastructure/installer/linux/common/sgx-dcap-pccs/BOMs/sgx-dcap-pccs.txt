@@ -73,6 +73,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/service/utils/Logger.js	<installdir>/utils/Logger.js	0	main	STP
 <deliverydir>/service/utils/PccsError.js	<installdir>/utils/PccsError.js	0	main	STP
 <deliverydir>/service/utils/apputil.js	<installdir>/utils/apputil.js	0	main	STP
+<deliverydir>/service/utils/errors.js	<installdir>/utils/errors.js	0	main	STP
 <deliverydir>/service/x509/x509.js	<installdir>/x509/x509.js	0	main	STP
 <deliverydir>/service/install.sh	<installdir>/install.sh	0	main	STP
 <deliverydir>/service/package.json	<installdir>/package.json	0	main	STP

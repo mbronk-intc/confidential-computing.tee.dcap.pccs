@@ -34,7 +34,7 @@ import PckCertificate from './PckCertificate.js';
 import Tcb from './Tcb.js';
 import util from "util";
 import Constants from '../constants/index.js';
-import PccsError from '../utils/PccsError.js';
+import { TcbNonComparableError} from '../utils/errors.js';
 
 export function selectBestPckCert(rawCpusvn, rawPcesvn, pceid, pckCertData, tcbInfo) {
     let pckCerts = parsePckCerts(pckCertData);
@@ -51,7 +51,7 @@ export function selectBestPckCert(rawCpusvn, rawPcesvn, pceid, pckCertData, tcbI
                     break;
                 }
             } catch (e) {
-                if (e instanceof PccsError) { // error is a result of invalid cert (incomparable TCB) - ignoring cert
+                if (e instanceof TcbNonComparableError) { // error is a result of invalid cert (incomparable TCB) - ignoring cert
                     break;
                 } else {
                     throw e;
