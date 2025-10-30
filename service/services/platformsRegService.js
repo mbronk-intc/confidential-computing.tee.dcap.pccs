@@ -31,6 +31,7 @@
 import PccsError from '../utils/PccsError.js';
 import PccsStatus from '../constants/pccs_status_code.js';
 import Constants from '../constants/index.js';
+import logger from '../utils/Logger.js';
 import Ajv from 'ajv';
 import * as platformsRegDao from '../dao/platformsRegDao.js';
 import * as platformsDao from '../dao/platformsDao.js';
