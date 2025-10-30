@@ -72,6 +72,7 @@ Recommends:     intel-tee-pccs-admin-tool >= %{version}-%{release}
 License:        BSD License
 URL:            https://github.com/intel/confidential-computing.tee.dcap.pccs
 Source0:        %{name}-%{version}.tar.gz
+BuildArch:      noarch
 
 %description
 Intel(R) Software Guard Extensions PCK Caching Service

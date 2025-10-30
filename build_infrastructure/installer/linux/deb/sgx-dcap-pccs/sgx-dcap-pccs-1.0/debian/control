@@ -7,7 +7,7 @@ Standards-Version: 3.9.4
 Homepage: https://github.com/intel/confidential-computing.tee.dcap.pccs
 
 Package: sgx-dcap-pccs
-Architecture: any
+Architecture: all
 #
 #  Note: NodeJS version constraint is deliberately lax, to allow for forward-compat
 #        As of time of this writing, the Intel_SGX_SW_Installation_Guide_for_Linux.pdf declares support

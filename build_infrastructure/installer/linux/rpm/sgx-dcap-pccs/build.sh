@@ -81,7 +81,7 @@ create_upstream_tarball() {
 
 build_rpm_package() {
     pushd ${SCRIPT_DIR}/${RPM_BUILD_FOLDER}
-    rpmbuild --define="_topdir `pwd`" --define='debug_package %{nil}' -ba SPECS/${DCAP_PCCS_PACKAGE_NAME}.spec
+    rpmbuild --define="_topdir `pwd`" --define='debug_package %{nil}' --nodebuginfo -bb SPECS/${DCAP_PCCS_PACKAGE_NAME}.spec
     popd
 }
 
