@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2025 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,15 +29,15 @@
  *
  */
 import { v4 as uuidv4 } from 'uuid';
-import { pccs_namespace } from "../dao/models/index.js";
+import { logger_namespace } from "../utils/Logger.js";
 
 export default function addRequestId(req, res, next) {
   const headerName = 'Request-ID';
   req['requestId'] = req.headers[headerName] || uuidv4().replace(/-/g, '');
   res.setHeader(headerName, req.requestId);
 
-  pccs_namespace.run(() => {
-    pccs_namespace.set('clientRequestId', req.requestId);
+  logger_namespace.run(() => {
+    logger_namespace.set('clientRequestId', req.requestId);
     next();
   });
 }

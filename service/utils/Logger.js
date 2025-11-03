@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2025 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,12 +32,21 @@
 import Config from 'config';
 import winston from 'winston';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { pccs_namespace } from "../dao/models/index.js";
+import clshooked from 'cls-hooked';
+import * as fs from 'fs';
 import { parseAndModifyUrl } from "../pcs_client/pcs_client.js";
-
+import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createLogger, format, transports } = winston;
+const { combine, timestamp, printf } = format;
+
+export const logger_namespace = clshooked.createNamespace('pccs-logger-namespace');
+
+export function formatLogMessage (tokens, req, res) {
+  const url = tokens.url(req, res);
+  const status = tokens.status(req, res);
+  return `[URL=${parseAndModifyUrl(url)}] -> [Status=${status}]`;
+}
 
 const options = {
   file: {
@@ -55,14 +64,14 @@ const options = {
   },
 };
 
-const { combine, timestamp, printf } = format;
+
 
 let logger = createLogger({
   format: combine(
       timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
       printf((info) => {
-        const requestId = pccs_namespace.get('clientRequestId') || '';
-        if (requestId === '') {
+        const requestId = logger_namespace.get('clientRequestId');
+        if (!requestId) {
           return `${info.timestamp} [${info.level}]: ${info.message}`;
         }
         else {
@@ -77,12 +86,6 @@ let logger = createLogger({
   exitOnError: false, // do not exit on handled exceptions
 });
 
-export function formatLogMessage (tokens, req, res) {
-  const url = tokens.url(req, res);
-  const status = tokens.status(req, res);
-  return `[URL=${parseAndModifyUrl(url)}] -> [Status=${status}]`;
-};
-
 logger.stream = {
   write: function (message, encoding) {
     logger.info(message.trim());
@@ -96,6 +99,17 @@ logger.on('finish', function() {
 logger.endAndExitProcess = () => {
   logger.end();
 };
+
+process.on('uncaughtException', function (exception) {
+  logger.error(exception);
+});
+
+process.on('SIGINT', () => {
+  logger.endAndExitProcess();
+});
+
+// Create ./logs if it doesn't exist
+fs.mkdirSync('./logs', { recursive: true });
 
 // Add a stopped flag
 let stopped = false;

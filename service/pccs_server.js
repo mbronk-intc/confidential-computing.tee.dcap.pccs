@@ -52,18 +52,6 @@ import {
   OfflineCachingMode,
 } from './services/caching_modes/cachingMode.js';
 
-process.on('uncaughtException', function (exception) {
-  logger.error(exception);
-});
-
-process.on('SIGINT', () => {
-  logger.endAndExitProcess();
-});
-
-// Create ./logs if it doesn't exist
-fs.mkdir('./logs', (err) => {
-  /* do nothing */
-});
 
 const app = express();
 

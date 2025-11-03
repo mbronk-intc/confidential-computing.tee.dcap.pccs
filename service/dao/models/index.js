@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2025 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,7 +32,6 @@ import * as fs from 'fs';
 import Config from 'config';
 import Sequelize from 'sequelize';
 import logger from '../../utils/Logger.js';
-import clshooked from 'cls-hooked';
 import FmspcTcbs from './fmspc_tcbs.js';
 import PckCert from './pck_cert.js';
 import PckCertchain from './pck_certchain.js';
@@ -46,9 +45,10 @@ import EnclaveIdentities from './enclave_identities.js';
 import CrlCache from './crl_cache.js';
 import AppraisalPolicy from './appraisal_policy.js';
 import mysqlPromise from 'mysql2/promise.js';
+import clshooked from "cls-hooked";
 
-const pccs_namespace = clshooked.createNamespace('pccs-namespace');
-Sequelize.useCLS(pccs_namespace);
+const db_namespace = clshooked.createNamespace('pccs-db-namespace');
+Sequelize.useCLS(db_namespace);
 
 // get config options for ssl
 function getSSLConfig(sslConfig) {
@@ -79,7 +79,7 @@ async function initializeDatabase() {
   if (dbOptions.logging === true) {
     dbOptions.logging = (msg) => logger.info(msg);
   }
-  
+
   const sslOptions = getSSLConfig(dbConfig.ssl);
   if (sslOptions) {
     dbOptions.dialectOptions = sslOptions;
@@ -130,8 +130,8 @@ async function handleMySQLError(dbConfig, dbOptions, err) {
 const sequelize = await initializeDatabase();
 initModels(sequelize); // Initialize all models
 
+
 export {
-  pccs_namespace,
   Sequelize,
   sequelize,
   FmspcTcbs,
