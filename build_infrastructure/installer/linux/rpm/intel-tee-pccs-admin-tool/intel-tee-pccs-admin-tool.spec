@@ -152,17 +152,21 @@ if [ -d "%{_venv_dir}" ]; then
     rm -rf "%{_venv_dir}"
     echo "Virtual environment removed."
 else
-    echo "No virtual environment found at %{_venv_dir}"
+    echo "No virtual environment found at %{_venv_dir}. Skipping its removal."
 fi
 
 if [ -f "%{_install_path}/%{_wrapper_script_name}" ]; then
     rm -f "%{_install_path}/%{_wrapper_script_name}"
 else
-    echo "No wrapper script found at %{_install_path}/%{_wrapper_script_name}"
+    echo "No wrapper script found at %{_install_path}/%{_wrapper_script_name}. Skipping its removal."
 fi
 
-#remove any __pycache__ remnant dirs which may have been created in "wrong" location if user launched the script w/o wrapper script
-find "%{_install_path}" -type d -name "__pycache__" -exec rm -rf {} +
+if [ -d "%{_install_path}" ]; then
+    #remove any __pycache__ remnant dirs which may have been created in "wrong" location if user launched the script w/o wrapper script
+    find "%{_install_path}" -type d -name "__pycache__" -exec rm -rf {} +
+else
+    echo "Installation path %{_install_path} does not exist. Skipping __pycache__ removal."
+fi
 
 # remove the symlink from /usr/local/bin
 if [ -L "/usr/local/bin/%{_wrapper_script_name}" ]; then
@@ -170,7 +174,7 @@ if [ -L "/usr/local/bin/%{_wrapper_script_name}" ]; then
     rm -f "/usr/local/bin/%{_wrapper_script_name}"
     echo "Symlink removed."
 else
-    echo "No symlink found at /usr/local/bin/%{_wrapper_script_name}"
+    echo "No symlink found at /usr/local/bin/%{_wrapper_script_name}. Skipping its removal."
 fi
 
 
