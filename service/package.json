@@ -11,6 +11,7 @@
     "caw": "^2.0.1",
     "cls-hooked": "^4.2.2",
     "config": "^3.3.12",
+    "cross-env": "^10.1.0",
     "express": "^4.21.2",
     "got": "^11.8.6",
     "morgan": "^1.10.1",
@@ -25,6 +26,6 @@
     "node": ">= 18.17.0"
   },
   "scripts": {
-    "start": "node pccs_server.js"
+    "start": "cross-env NODE_ENV=production node pccs_server.js"
   }
 }
