@@ -52,7 +52,7 @@ export function selectBestPckCert(rawCpusvn, rawPcesvn, pceid, pckCertData, tcbI
                 }
             } catch (e) {
                 if (e instanceof TcbNonComparableError) { // error is a result of invalid cert (incomparable TCB) - ignoring cert
-                    break;
+                    continue;
                 } else {
                     throw e;
                 }
