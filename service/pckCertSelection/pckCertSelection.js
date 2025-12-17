@@ -32,44 +32,51 @@
 import X509 from '../x509/x509.js';
 import PckCertificate from './PckCertificate.js';
 import Tcb from './Tcb.js';
-import util from "util";
+import util from 'util';
 import Constants from '../constants/index.js';
 import { TcbNonComparableError} from '../utils/errors.js';
+import logger from '../utils/Logger.js';
 
 export function selectBestPckCert(rawCpusvn, rawPcesvn, pceid, pckCertData, tcbInfo) {
-    let pckCerts = parsePckCerts(pckCertData);
-    validateInput(pceid, pckCerts, tcbInfo);
+    try {
+        let pckCerts = parsePckCerts(pckCertData);
+        validateInput(pceid, pckCerts, tcbInfo);
 
-    // create structure for collecting PCK certs that match TCB level
-    let tcbPckCertsBuckets = createBucketsForCertificatesByTcb(tcbInfo);
-    // match pck certs to proper pckCertSelection info
-    pckCerts.forEach(pckCert => {
-        for (const tcbBucket of tcbPckCertsBuckets) {
-            try {
-                if (pckCert.tcb.compare(tcbBucket.tcb) >= 0) { // pck cert is greater or equal
-                    tcbBucket.certs.push(pckCert);
-                    break;
-                }
-            } catch (e) {
-                if (e instanceof TcbNonComparableError) { // error is a result of invalid cert (incomparable TCB) - ignoring cert
-                    continue;
-                } else {
-                    throw e;
+        // create structure for collecting PCK certs that match TCB level
+        let tcbPckCertsBuckets = createBucketsForCertificatesByTcb(tcbInfo);
+        // match pck certs to proper pckCertSelection info
+        pckCerts.forEach(pckCert => {
+            for (const tcbBucket of tcbPckCertsBuckets) {
+                try {
+                    if (pckCert.tcb.compare(tcbBucket.tcb) >= 0) { // pck cert is greater or equal
+                        tcbBucket.certs.push(pckCert);
+                        break;
+                    }
+                } catch (e) {
+                    if (e instanceof TcbNonComparableError) { // error is a result of invalid cert (incomparable TCB) - ignoring cert
+                        continue;
+                    } else {
+                        throw e;
+                    }
                 }
             }
+            // if cert does not match any TCB level it is not valid - omit
+        });
+
+        // counting equivalent for platform TCB based on TCB info
+        const rawTCB = new Tcb(rawCpusvn, littleEndianHexStringToInteger(rawPcesvn));
+        const eqvTCB = rawTCB.computeEquivalent(tcbPckCertsBuckets)
+        if (!eqvTCB) {
+            throw new Error(util.format('No equivalent TCB found for given raw TCB: CPUSVN %s, PCESVN: %s', rawCpusvn, rawPcesvn));
         }
-        // if cert does not match any TCB level it is not valid - omit
-    });
 
-    // counting equivalent for platform TCB based on TCB info
-    const rawTCB = new Tcb(rawCpusvn, littleEndianHexStringToInteger(rawPcesvn));
-    const eqvTCB = rawTCB.computeEquivalent(tcbPckCertsBuckets)
-    if (!eqvTCB) {
-        throw new Error(util.format('No equivalent TCB found for given raw TCB: CPUSVN %s, PCESVN: %s', rawCpusvn, rawPcesvn));
+        // looking for the best pck cert in bucket
+        return selectBestPckCertFromTcbBucket(rawTCB, eqvTCB.certs);
+        
+    } catch (e) {
+        logger.error('Error during selection of PCK Cert: ' + e.message);
+        throw e;
     }
-
-    // looking for the best pck cert in bucket
-    return selectBestPckCertFromTcbBucket(rawTCB, eqvTCB.certs);
 }
 
 function selectBestPckCertFromTcbBucket(rawTCB, pckCerts) {
@@ -94,6 +101,10 @@ function parsePckCerts(pckCertData) {
 }
 
 function validateInput(pceId, pckCerts, tcbInfo) {
+    if (tcbInfo.tcbType !== 0) {
+        throw new Error(util.format('TCB_TYPE in TCB Info (%s) is different than 0', tcbInfo.tcbType));
+    }
+
     // check if PCEID is the same for platform and TCB Info
     if (tcbInfo.pceId.toUpperCase() !== pceId.toUpperCase()) {
         throw new Error(util.format('PCEID in TCB Info (%s) is different than platform PCEID (%s)', tcbInfo.pceId, pceId));
