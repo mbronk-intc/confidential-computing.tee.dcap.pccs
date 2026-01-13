@@ -1,0 +1,150 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ "main*" ]
+    paths:
+      - '**'
+      - '!**.txt'
+      - '!**.md'
+      - '!.github/**'
+      - '.github/workflows/codeql.yml'
+      - '.github/codeql/**'
+  pull_request:
+    branches: [ "main*" ]
+    paths:
+      - '**'
+      - '!**.txt'
+      - '!**.md'
+      - '!.github/**'
+      - '.github/workflows/codeql.yml'
+      - '.github/codeql/**'
+  schedule:
+    - cron: '35 2 * * 0'
+
+# Declare default permissions as read only.
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ${{ vars.RUNNER_CODE_QL || 'ubuntu-22.04' }}  # The runner type (if overridden by the var) must be an Ubuntu flavor for the C++ build to work.
+    timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
+    permissions:
+      security-events: write  # For uploading SARIF results to code scanning API
+      packages: read  # required to fetch internal or private CodeQL packs
+      actions: read   # For telemetry/status reporting
+      contents: read
+      pull-requests: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - language: javascript-typescript  # PCCS service
+          build-mode: none
+          sarif-name: javascript
+        - language: python  # PCCS Admin tool
+          build-mode: none
+          sarif-name: python
+        # CodeQL supports the following values keywords for 'language': 'actions', 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'rust', 'swift'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        token: ${{ secrets.ALL_REPO_CONTENTS_READ_PAT || github.token }}
+
+    # Add any setup steps before running the `github/codeql-action/init` action.
+    # This includes steps like installing compilers or runtimes (`actions/setup-node`
+    # or others). This is typically only required for manual builds.
+    # - name: Setup runtime (example)
+    #   uses: actions/setup-example@v1
+
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v4
+      with:
+        languages: ${{ matrix.language }}
+        build-mode: ${{ matrix.build-mode }}
+        config-file: ./.github/codeql/codeql-config.yml
+        queries: +security-and-quality
+        # If you wish to specify custom queries, you can do so here or in a config file.
+        # By default, queries listed here will override any specified in a config file.
+        # Prefix the list here with "+" to use these queries and those in the config file.
+    
+        # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
+        # queries: security-extended,security-and-quality
+
+    - name: Run manual build steps
+      if: matrix.build-mode == 'manual'  # Placeholder, never used for this repo
+      shell: bash
+      run: |
+        echo 'No manual build'
+        exit 1
+
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: "/language:${{matrix.language}}"
+        output: sarif-results
+        upload: ${{ vars.DO_NOT_UPLOAD_SARIF_TO_GITHUB == '1' && 'never' || 'failure-only' }}
+
+    - name: Filter SARIF
+      uses: advanced-security/filter-sarif@v1
+      with:
+        patterns: |
+          -external/**/*
+          -prebuilt/**/*
+          -sgxsdk/include/**/*
+          -QuoteVerification/sgxssl/**/*
+        input: sarif-results/${{ matrix.sarif-name }}.sarif
+        output: sarif-results/${{ matrix.sarif-name }}.sarif
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v5
+      if: ${{ vars.PUBLISH_STANDALONE_SARIF_RESULTS == '1' }}
+      with:
+        name: codeQL_sarif_results_${{ matrix.language }}
+        path: sarif-results/**
+        retention-days: 1
+
+    - name: Upload SARIF to GitHub Code Scanning
+      if: ${{ vars.DO_NOT_UPLOAD_SARIF_TO_GITHUB != '1' }}
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: sarif-results/${{ matrix.sarif-name }}.sarif
+
+  aggregate_results:
+    name: Publish results as standalone artifact
+    runs-on: ${{ vars.RUNNER_CODE_QL || 'ubuntu-22.04' }}
+    needs: analyze
+    if: always() && vars.PUBLISH_STANDALONE_SARIF_RESULTS == '1'
+
+    steps:
+      - name: Collect all results
+        uses: actions/download-artifact@v4
+        with:
+          path: combined-artifacts
+          merge-multiple: true
+
+      - name: Generate a local HTML report
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+         set -xeuo pipefail
+         sudo -E apt-get update && sudo -E apt-get install -y --no-install-recommends python3-pip
+         pip3 install sarif-tools
+         ~/.local/bin/sarif html combined-artifacts/*.sarif --output combined-artifacts/codeQL_report.html
+
+      - name: Upload combined results for offline viewing
+        uses: actions/upload-artifact@v5
+        with:
+          name: codeQL-results
+          path: combined-artifacts
