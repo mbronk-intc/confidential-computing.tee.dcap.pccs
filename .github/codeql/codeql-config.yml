@@ -1,5 +1,5 @@
 name: "CodeQL config"
 paths-ignore:
-  - '__**/gen_source.py'
-  - '__**/Installer_VersionSync*.py'
+  - '**/gen_source.py.nope'
+  - '**/Installer_VersionSync*.py.nope'
 threat-models: local
