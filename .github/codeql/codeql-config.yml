@@ -1,4 +1,4 @@
 name: "CodeQL config"
 paths-ignore:
   - '**/gen_source.py'
-threat-models: local
+#threat-models: local
