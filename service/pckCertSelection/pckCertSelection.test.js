@@ -94,6 +94,10 @@ const validTestData = {
         {
             'tcbm': '020202020301000300000000000000000500',
             'pck_cert': '-----BEGIN CERTIFICATE-----\nMIIEcTCCBBegAwIBAgIVAMqkxB0mxk4Rhk+4FNhlDgUo034PMAoGCCqGSM49BAMC\nMHExIzAhBgNVBAMMGkludGVsIFNHWCBQQ0sgUHJvY2Vzc29yIENBMRowGAYDVQQK\nDBFJbnRlbCBDb3Jwb3JhdGlvbjEUMBIGA1UEBwwLU2FudGEgQ2xhcmExCzAJBgNV\nBAgMAkNBMQswCQYDVQQGEwJVUzAeFw0yNjAxMTMxMjA4MzFaFw0zMzAxMTMxMjA4\nMzFaMHAxIjAgBgNVBAMMGUludGVsIFNHWCBQQ0sgQ2VydGlmaWNhdGUxGjAYBgNV\nBAoMEUludGVsIENvcnBvcmF0aW9uMRQwEgYDVQQHDAtTYW50YSBDbGFyYTELMAkG\nA1UECAwCQ0ExCzAJBgNVBAYTAlVTMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE\nJ1aaCA+dA3tk9MK2H/sVjy+nQohWKwTsS3acx6bMQmcxaURiO4UKIJQVY3Ut1kSL\n9GdA5wY8pBmt38wjTcibTaOCAoswggKHMB8GA1UdIwQYMBaAFJ8Gl+9TIUTU+kx+\n6LqNs9Ml5JKQMFAGA1UdHwRJMEcwRaBDoEGGP2h0dHBzOi8vMTI3LjAuMC4xOjg0\nNDQvc2d4L2NlcnRpZmljYXRpb24vdjIvcGNrY3JsP2NhPXByb2Nlc3NvcjAdBgNV\nHQ4EFgQUSw45DxEYeKE/XY4w5hax6W4qe9UwDgYDVR0PAQH/BAQDAgbAMAwGA1Ud\nEwEB/wQCMAAwggHTBgkqhkiG+E0BDQEEggHEMIIBwDAeBgoqhkiG+E0BDQEBBBAc\nfZDkNWx5KO7SMLMO6UPvMIIBYwYKKoZIhvhNAQ0BAjCCAVMwEAYLKoZIhvhNAQ0B\nAgECAQIwEAYLKoZIhvhNAQ0BAgICAQIwEAYLKoZIhvhNAQ0BAgMCAQIwEAYLKoZI\nhvhNAQ0BAgQCAQIwEAYLKoZIhvhNAQ0BAgUCAQMwEAYLKoZIhvhNAQ0BAgYCAQEw\nEAYLKoZIhvhNAQ0BAgcCAQAwEAYLKoZIhvhNAQ0BAggCAQMwEAYLKoZIhvhNAQ0B\nAgkCAQAwEAYLKoZIhvhNAQ0BAgoCAQAwEAYLKoZIhvhNAQ0BAgsCAQAwEAYLKoZI\nhvhNAQ0BAgwCAQAwEAYLKoZIhvhNAQ0BAg0CAQAwEAYLKoZIhvhNAQ0BAg4CAQAw\nEAYLKoZIhvhNAQ0BAg8CAQAwEAYLKoZIhvhNAQ0BAhACAQAwEAYLKoZIhvhNAQ0B\nAhECAQUwHwYLKoZIhvhNAQ0BAhIEEAICAgIDAQADAAAAAAAAAAAwEAYKKoZIhvhN\nAQ0BAwQCAAAwFAYKKoZIhvhNAQ0BBAQGEjRWeAAAMA8GCiqGSIb4TQENAQUKAQAw\nCgYIKoZIzj0EAwIDSAAwRQIgNQ+szwXnsjWe3M8anj5gfZ0hRpCQ8A04HsC7rBku\ny8sCIQC8e1G/Wpf7yBBTjB1R33IOVYBFhSSFTLfE5HlPNgyx2A==\n-----END CERTIFICATE-----\n',
+        },
+        {
+            "tcbm": "0202020203010003000000000000000F0100", //uncomparable with the rest
+            "pck_cert": "-----BEGIN CERTIFICATE-----\nMIIEfTCCBCSgAwIBAgIVAI1TRrwN0ZjGEM3jgRQDcVj+rXEUMAoGCCqGSM49BAMC\nMHExIzAhBgNVBAMMGkludGVsIFNHWCBQQ0sgUHJvY2Vzc29yIENBMRowGAYDVQQK\nDBFJbnRlbCBDb3Jwb3JhdGlvbjEUMBIGA1UEBwwLU2FudGEgQ2xhcmExCzAJBgNV\nBAgMAkNBMQswCQYDVQQGEwJVUzAeFw0yNjAxMTUxMzA3MzdaFw0zMzAxMTUxMzA3\nMzdaMHAxIjAgBgNVBAMMGUludGVsIFNHWCBQQ0sgQ2VydGlmaWNhdGUxGjAYBgNV\nBAoMEUludGVsIENvcnBvcmF0aW9uMRQwEgYDVQQHDAtTYW50YSBDbGFyYTELMAkG\nA1UECAwCQ0ExCzAJBgNVBAYTAlVTMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE\nK2ikxsQM5yphyseHh996DOAdt9D+lS7+oqOKg5DfNefy3YupVL5JFZCM6QMwq0Qm\nOx+7uxouW8jomsFQRGspqaOCApgwggKUMB8GA1UdIwQYMBaAFJ8Gl+9TIUTU+kx+\n6LqNs9Ml5JKQMF0GA1UdHwRWMFQwUqBQoE6GTGh0dHBzOi8vMTI3LjAuMC4xOjg0\nNDQvc2d4L2NlcnRpZmljYXRpb24vdjQvcGNrY3JsP2NhPXByb2Nlc3NvciZlbmNv\nZGluZz1kZXIwHQYDVR0OBBYEFLio9qeCU7ySVPEhTvemQ65J711jMA4GA1UdDwEB\n/wQEAwIGwDAMBgNVHRMBAf8EAjAAMIIB0wYJKoZIhvhNAQ0BBIIBxDCCAcAwHgYK\nKoZIhvhNAQ0BAQQQHH2Q5DVseSju0jCzDulD7zCCAWMGCiqGSIb4TQENAQIwggFT\nMBAGCyqGSIb4TQENAQIBAgECMBAGCyqGSIb4TQENAQICAgECMBAGCyqGSIb4TQEN\nAQIDAgECMBAGCyqGSIb4TQENAQIEAgECMBAGCyqGSIb4TQENAQIFAgEDMBAGCyqG\nSIb4TQENAQIGAgEBMBAGCyqGSIb4TQENAQIHAgEAMBAGCyqGSIb4TQENAQIIAgED\nMBAGCyqGSIb4TQENAQIJAgEAMBAGCyqGSIb4TQENAQIKAgEAMBAGCyqGSIb4TQEN\nAQILAgEAMBAGCyqGSIb4TQENAQIMAgEAMBAGCyqGSIb4TQENAQINAgEAMBAGCyqG\nSIb4TQENAQIOAgEAMBAGCyqGSIb4TQENAQIPAgEAMBAGCyqGSIb4TQENAQIQAgEP\nMBAGCyqGSIb4TQENAQIRAgEBMB8GCyqGSIb4TQENAQISBBACAgICAwEAAwAAAAAA\nAAAPMBAGCiqGSIb4TQENAQMEAgAAMBQGCiqGSIb4TQENAQQEBhI0VngAADAPBgoq\nhkiG+E0BDQEFCgEAMAoGCCqGSM49BAMCA0cAMEQCIEOSGXBqLTKvN6IFXFnQdxKs\n22XbZDxNcwpRtYqCTvD8AiA57tu7HNrYec/HqliESl8DuTFlsrOmHp/GvfFsL8b8\nfw==\n-----END CERTIFICATE-----",
         }
     ]
 };
@@ -170,8 +174,9 @@ describe('pckCertSelection', () => {
                 expect(result.tcbm).to.equal('030302020401000500000000000000000B00');
             });
             it('should successfully select correct certificate when reversed pck order', () => {
+                const reversedPckCertData = [...validTestData.pckCertData].reverse();
                 const result = selectBestPckCert(validTestData.rawCpusvn, validTestData.rawPcesvn, validTestData.pceid,
-                    validTestData.pckCertData.reverse(), validTestData.tcbInfo);
+                    reversedPckCertData, validTestData.tcbInfo);
                 expect(result.tcbm).to.equal('030302020401000500000000000000000B00');
             });
             it('should select highest TCB certificate when raw TCB is higher then all certs', () => {
@@ -182,7 +187,7 @@ describe('pckCertSelection', () => {
                 expect(result.tcbm).to.equal('040402020401000700000000000000000B00');
             });
             it('should handle single certificate in list and multiple tcb info - not all TCBs has matching cert', () => {
-                const singleCertData = [validTestData.pckCertData[9]];
+                const singleCertData = [validTestData.pckCertData[0]];
                 const rawCpusvn = '04040202040100070000000000000000';
                 const rawPcesvn = '0B00';
 
@@ -206,6 +211,39 @@ describe('pckCertSelection', () => {
                 expect(() => selectBestPckCert(validTestData.rawCpusvn, rawPcesvn,
                     validTestData.pceid, validTestData.pckCertData, validTestData.tcbInfo
                 )).not.to.throw();
+            });
+
+            it('should match cert despite incomparable tcb info', () => {
+                const rawCpusvn = 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF'; // Very high TCB
+                const rawPcesvn = 'FFFF';
+                const tcbInfo = {
+                    pceId: validTestData.tcbInfo.pceId,
+                    fmspc: validTestData.tcbInfo.fmspc,
+                    tcbType: validTestData.tcbInfo.tcbType,
+                    tcbLevels: [
+                        {
+                            tcb: {
+                                sgxtcbcomponents: Array(16).fill({ svn: 1 }), // uncomparable with certs and rawCpusvn
+                                pcesvn: 1
+                            }
+                        }
+                    ]
+                };
+
+                const result = selectBestPckCert(rawCpusvn, rawPcesvn, validTestData.pceid, validTestData.pckCertData, tcbInfo);
+
+                expect(result.tcbm).to.equal("040402020401000700000000000000000B00");
+            });
+
+            it('should match to extra uncomparable cert', () => {
+                const result = selectBestPckCert(
+                    '0202020203010003000000000000000F', // extra uncomparable cert cpusvn
+                    '0400', // lower pcesvn than all others, but higher than extra cert
+                    validTestData.pceid,
+                    validTestData.pckCertData,
+                    validTestData.tcbInfo
+                );
+                expect(result.tcbm).to.equal('0202020203010003000000000000000F0100');
             });
 
             it('should handle case insensitive cpusvn matching', () => {
