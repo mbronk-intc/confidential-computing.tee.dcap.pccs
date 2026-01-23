@@ -3,7 +3,7 @@
 
 import Tcb from './Tcb.js';
 import { expect } from 'chai';
-import { TcbError } from "../utils/errors.js";
+import { TcbError } from '../utils/errors.js';
 
 describe('Tcb', () => {
     describe('Constructor', () => {

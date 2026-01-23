@@ -149,6 +149,20 @@ function validateInput(pceId, pckCerts, tcbInfo) {
         throw new Error(util.format('PCEID in TCB Info (%s) is different than platform PCEID (%s)', tcbInfo.pceId, pceId));
     }
 
+    if (!tcbInfo.tcbLevels?.length) {
+        throw new Error('Empty TCB Levels in in TCB Info');
+    }
+
+    tcbInfo.tcbLevels.forEach((tcbLevel, index) => {
+        if (!tcbLevel.tcb?.sgxtcbcomponents?.length) {
+            throw new Error(util.format('Invalid TCB levels: Level %d missing sgxtcbcomponents', index));
+        }
+        const pcesvn = tcbLevel.tcb?.pcesvn;
+        if (!Number.isInteger(pcesvn) || pcesvn < 0) {
+            throw new Error(util.format('Invalid TCB levels: Level %d invalid pcesvn (%s)', index, pcesvn));
+        }
+    });
+
     let ppid;
     pckCerts.forEach(pckCert => {
         if (pckCert.x509.version !== Constants.PCK_CERT_VERSION) {
