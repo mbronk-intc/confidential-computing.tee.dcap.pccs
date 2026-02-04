@@ -25,7 +25,7 @@
     "node": ">= 18.17.0"
   },
   "overrides": {
-    "tar": "^7.5.4"
+    "tar": "^7.5.7"
   },
   "scripts": {
     "start": "node pccs_server.js"
