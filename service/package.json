@@ -34,7 +34,7 @@
     "tar": "^7.5.9",
     "diff": "^8.0.3",
     "ajv": "^8.18.0",
-    "minimatch": "^10.2.2"
+    "minimatch": "^10.2.4"
   },
   "scripts": {
     "start": "cross-env NODE_ENV=production node pccs_server.js",
