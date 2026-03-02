@@ -38,6 +38,10 @@ Install Node.js (Supported versions are `18.17.0` and later)
 - For Debian and Ubuntu based distributions, please refer to https://github.com/nodesource/distributions
 - To download and install, go to https://nodejs.org/en/download/
 
+> [!NOTE]
+> The next release will no longer support Node.js v18 which is already End-of-Life (EOL) and v20 which will reach End-of-Life (EOL) status soon.
+> Future releases will only support Node.js LTS versions that are in Active LTS or Maintenance LTS status according to the official [Node.js release schedule](https://nodejs.org/en/about/previous-releases).
+
 ### Install via Linux Debian package installer
 
   ``` bash
